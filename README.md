@@ -1,5 +1,5 @@
-# EcoBot
-A Economy Bot made using py-cord and mongoDB
+# ZenBot
+A Age of Zen Economy Bot made using py-cord and mongoDB
 
 -------------------------
 
