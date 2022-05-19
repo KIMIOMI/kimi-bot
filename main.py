@@ -11,11 +11,11 @@ from pretty_help import PrettyHelp
 
 class Echo(commands.Bot):
     def __init__(self):
-        self.description = """Echo - A Economy Bot"""
+        self.description = """WORLD OF AGE OF ZEN"""       # change bot description
 
         super().__init__(
-            command_prefix={"."},
-            owner_ids={727365670395838626},
+            command_prefix={"!"},                           # change prefix here
+            owner_ids={847032918747512872},                 # change server owner id
             intents=discord.Intents.all(),
             help_command=PrettyHelp(),
             description=self.description,

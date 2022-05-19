@@ -29,5 +29,9 @@
         ["Bus",15000,"bus"],
         ["Jeep",30000,"jeep"],
         ["Motorcycle",5000,"motorcycle"]
-    ]
+    ],
+    "Land" : {
+        "price": 100,
+        "amount": 10000000000
+    }
 }

@@ -85,6 +85,7 @@ class Errors(commands.Cog):
             except discord.Forbidden:
                 raise error
             return
+
         if isinstance(error, discord.errors.Forbidden):
             try:
                 embed = discord.Embed(
