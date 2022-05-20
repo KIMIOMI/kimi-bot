@@ -222,6 +222,7 @@ class Economy(commands.Cog):
         try:
             await ecomoney.delete_one({"id": user.id})
             await self.update_user(user.id)
+            await ctx.send(f"{user.mention} lost all assets !!")
 
         except Exception:
             await ctx.send('An error occured')
