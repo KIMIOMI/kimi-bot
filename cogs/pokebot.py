@@ -61,7 +61,7 @@ class Pokebot(commands.Cog):
         # check if the server exists in servers and if not create an entry
         server = await servers.find_one({"_id": message.guild.id})
         if server is None:
-            servers.insert_one({"_id": message.guild.id, "spawn_count": 5, "spawn_channel": message.guild.text_channels[0].id, "message_counter": 0})
+            await servers.insert_one({"_id": message.guild.id, "spawn_count": 5, "spawn_channel": message.guild.text_channels[0].id, "message_counter": 0})
         else:
             # check server message_counter
             message_counter = server["message_counter"]
@@ -163,8 +163,8 @@ class Pokebot(commands.Cog):
     @cooldown(1, 2, BucketType.user)
     async def pinventory(self, ctx):
         # find all pokemon with owner equal to ctx.author.id
-        inv = await pokemon.find({"owner": ctx.author.id})
-        inv = list(inv)
+        inv = pokemon.find({"owner": ctx.author.id})
+        inv = await inv.to_list(length=10)
         if len(inv) > 0:
             items = ""
             embed = discord.Embed(
@@ -192,8 +192,8 @@ class Pokebot(commands.Cog):
             await ctx.send("Please enter a valid name.")
             return
 
-        poke = await pokemon.find({"owner": ctx.author.id, "name": name})
-        poke = list(poke)
+        poke = pokemon.find({"owner": ctx.author.id, "name": name})
+        poke = await poke.to_list(length=10)
 
         if len(poke) > 0:
             items = ""
