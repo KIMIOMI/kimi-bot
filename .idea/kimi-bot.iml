@@ -8,7 +8,8 @@
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PackageRequirementsSettings">
-    <option name="versionSpecifier" value="더 크거나 같음 (&gt;=x.y.z)" />
+    <option name="versionSpecifier" value="버전 지정 안 함" />
+    <option name="modifyBaseFiles" value="true" />
     <option name="keepMatchingSpecifier" value="false" />
   </component>
 </module>

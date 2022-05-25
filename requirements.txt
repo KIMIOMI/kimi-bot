@@ -1,9 +1,11 @@
 py-cord
 jishaku
 discord-pretty-help
-motor>=3.0.0
-psutil>=5.9.0
+motor
+psutil
 nest_asyncio
 dnspython
-aiohttp>=3.7.4.post0
+aiohttp
 discord[voice]
+requests
+pymongo
