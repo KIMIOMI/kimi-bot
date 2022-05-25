@@ -59,7 +59,7 @@ class Pokebot(commands.Cog):
         if message.author == self.bot.user:
             return
         # check if the server exists in servers and if not create an entry
-        server = servers.find_one({"_id": message.guild.id})
+        server = await servers.find_one({"_id": message.guild.id})
         if server is None:
             servers.insert_one({"_id": message.guild.id, "spawn_count": 5, "spawn_channel": message.guild.text_channels[0].id, "message_counter": 0})
         else:
@@ -98,7 +98,7 @@ class Pokebot(commands.Cog):
                     "weight": weight, "experience": experience, "abilities": abilities, "level": level, "owner": "",
                     "selected": False, "spawn_server": message.guild.id, "createdAt": datetime.datetime.utcnow()
                 }
-                pokemon.insert_one(new_pokemon)
+                await pokemon.insert_one(new_pokemon)
 
                 embed = discord.Embed(
                     title=f'A wild Pokemon {name} has appeared !!',
@@ -112,22 +112,22 @@ class Pokebot(commands.Cog):
                 message_counter = 0
             else:
                 message_counter += 1
-            servers.update_one(server, {"$set":{"message_counter": message_counter}})
+            await servers.update_one(server, {"$set":{"message_counter": message_counter}})
 
             # check if the user owns any pokemon
-            res = pokemon.find_one({"owner": message.author.id})
+            res = await pokemon.find_one({"owner": message.author.id})
             if res is None:
                 pass
             else:
                 # increase the experience of the user's selected pokemon by 1
-                pokemon.update_one({"owner": message.author.id, "selected": True}, {"$inc": {"experience": 1}})
+                await pokemon.update_one({"owner": message.author.id, "selected": True}, {"$inc": {"experience": 1}})
 
                 # check if the pokemon has leveled up
-                poke = pokemon.find_one({"owner": message.author.id, "selected": True})
+                poke = await pokemon.find_one({"owner": message.author.id, "selected": True})
                 exp =poke["experience"]
                 level = poke["level"]
                 if exp > math.pow(level, 3) and level < 100:
-                    pokemon.update_one(poke, {"$inc":{"level": 1}})
+                    await pokemon.update_one(poke, {"$inc":{"level": 1}})
                     await message.channel.send(f'{message.author.name}\'s Pokemon {poke["name"]} has leveled up.')
 
 
@@ -137,20 +137,20 @@ class Pokebot(commands.Cog):
     @commands.is_owner()
     @cooldown(1, 2, BucketType.user)
     async def pspawn(self, ctx, count : int):
-        servers.update_one({"_id": ctx.guild.id}, {"$set": {"spawn_count": count}})
+        await servers.update_one({"_id": ctx.guild.id}, {"$set": {"spawn_count": count}})
 
 
     @commands.command()
     @commands.is_owner()
     @cooldown(1, 2, BucketType.user)
     async def pchannel(self, ctx, text_channel : discord.TextChannel):
-        servers.update_one({"_id": ctx.guild.id}, {"$set": {"spawn_channel": text_channel.id}})
+        await servers.update_one({"_id": ctx.guild.id}, {"$set": {"spawn_channel": text_channel.id}})
 
     @commands.command()
     @commands.is_owner()
     @cooldown(1, 2, BucketType.user)
     async def pserver(self, ctx):
-        res = servers.find_one({"_id": ctx.guild.id})
+        res = await servers.find_one({"_id": ctx.guild.id})
         embed = discord.Embed(
             title=f'Server Settings for {ctx.guild.name}',
             description=f'Spawn Count: {res["spawn_count"]}'
@@ -164,7 +164,7 @@ class Pokebot(commands.Cog):
     @cooldown(1, 2, BucketType.user)
     async def pinventory(self, ctx):
         # find all pokemon with owner equal to ctx.author.id
-        inv = pokemon.find({"owner": ctx.author.id})
+        inv = await pokemon.find({"owner": ctx.author.id})
         inv = list(inv)
         if len(inv) > 0:
             items = ""
@@ -193,7 +193,7 @@ class Pokebot(commands.Cog):
             await ctx.send("Please enter a valid name.")
             return
 
-        poke = pokemon.find({"owner": ctx.author.id, "name": name})
+        poke = await pokemon.find({"owner": ctx.author.id, "name": name})
         poke = list(poke)
 
         if len(poke) > 0:
@@ -220,14 +220,14 @@ class Pokebot(commands.Cog):
             await ctx.send("Please enter a valid number.")
             return
 
-        res = pokemon.find_one({"_id": ObjectId(object_id), "owner": ctx.author.id})
+        res = await pokemon.find_one({"_id": ObjectId(object_id), "owner": ctx.author.id})
         if res is None:
             await ctx.send("You don't have a Pokemon with this Number in your Inventory.")
         else:
             # find all pokemon with owner equal to ctx.author.id and selected equal to True, change selected to False
-            pokemon.update_many({"owner": ctx.author.id, "selected": True}, {"$set": {"selected": False}})
+            await pokemon.update_many({"owner": ctx.author.id, "selected": True}, {"$set": {"selected": False}})
             # change object_id pokemon selected to True
-            pokemon.update_one({"_id": ObjectId(object_id), "owner": ctx.author.id}, {"$set": {"selected": True}})
+            await pokemon.update_one({"_id": ObjectId(object_id), "owner": ctx.author.id}, {"$set": {"selected": True}})
             await ctx.send(f'Name: {res["name"]} | Number: {res["_id"]} is now your selected Pokemon.')
 
     @commands.command()
@@ -240,7 +240,7 @@ class Pokebot(commands.Cog):
             await ctx.send("Please enter a valid number.")
             return
 
-        poke = pokemon.find_one({"_id": ObjectId(object_id)})
+        poke = await pokemon.find_one({"_id": ObjectId(object_id)})
         if poke is None:
             await ctx.send("A pokemon with this Number does not exist.")
         else:
@@ -279,17 +279,17 @@ class Pokebot(commands.Cog):
             await ctx.send("Please enter a valid name.")
             return
 
-        poke = pokemon.find_one({"owner": "", "spawn_server": ctx.guild.id, "name": name.replace(" ", "-").lower()})
+        poke = await pokemon.find_one({"owner": "", "spawn_server": ctx.guild.id, "name": name.replace(" ", "-").lower()})
         if poke is None:
             await ctx.send("Either that is not the name of the Pokemon, this Pokemon has already been caught, "
                            "or this Pokemon has run away!")
         else:
-            res = pokemon.find_one({"owner": ctx.author.id, "selected": True})
+            res = await pokemon.find_one({"owner": ctx.author.id, "selected": True})
             if res is None:
                 selected = True
             else:
                 selected = False
-            pokemon.update_one(poke, {"$set": {"owner": ctx.author.id, "selected": selected}})
+            await pokemon.update_one(poke, {"$set": {"owner": ctx.author.id, "selected": selected}})
             await ctx.send(f'{ctx.author.name} has caught a wild {poke["name"]}!')
 
 def setup(bot):
