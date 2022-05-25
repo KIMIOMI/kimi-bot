@@ -102,7 +102,7 @@ class Pokebot(commands.Cog):
 
                 embed = discord.Embed(
                     title=f'A wild Pokemon {name} has appeared !!',
-                    description="Quick! Catch them with **p!catch pokemon_name**."
+                    description="Quick! Catch them with **!pcatch pokemon name**."
                                 "\nPokemon tends to run away after 3 hours appearing.",
                     color = discord.Color.gold()
                 )
