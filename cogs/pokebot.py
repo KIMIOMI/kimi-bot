@@ -130,8 +130,7 @@ class Pokebot(commands.Cog):
                     await pokemon.update_one(poke, {"$inc":{"level": 1}})
                     await message.channel.send(f'{message.author.name}\'s Pokemon {poke["name"]} has leveled up.')
 
-
-        await self.bot.process_commands(message)
+        # await self.bot.process_commands(message)
 
     @commands.command()
     @commands.is_owner()
