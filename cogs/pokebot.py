@@ -176,7 +176,7 @@ class Pokebot(commands.Cog):
                 if item["selected"]:
                     items = f'Name: {item["name"]} | Number: {item["_id"]}\n{items}'
                 else:
-                    items += f'Name: {item["name"]} | Number: {item["_id"]}'
+                    items += f'Name: {item["name"]} | Number: {item["_id"]}\n'
             embed.add_field(name="Pokemon", value=items)
             await ctx.send(embed=embed)
         else:
