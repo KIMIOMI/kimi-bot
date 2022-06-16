@@ -34,8 +34,8 @@ class Errors(commands.Cog):
                 fmt = " and ".join(missing)
 
             embed = discord.Embed(
-                title="Missing Permissions",
-                description=f"I am missing **{fmt}** permissions to run this command :(",
+                title="권한이 없습니다.",
+                description=f"권한 **{fmt}** 이 필요합니다.",
                 color=0xFF0000,
             )
             return
@@ -46,8 +46,8 @@ class Errors(commands.Cog):
 
         if isinstance(error, commands.CommandOnCooldown):
             embed = discord.Embed(
-                title="Cooldown",
-                description=f"This command is on cooldown, please retry in {math.ceil(error.retry_after)}s.",
+                title="쿨다운",
+                description=f"이 명령어를 다시 실행하기 위해선 {math.ceil(error.retry_after)}초 기다려주세요.",
                 color=0xFF0000,
             )
             await ctx.send(embed=embed)
@@ -63,8 +63,8 @@ class Errors(commands.Cog):
             else:
                 fmt = " and ".join(missing)
             embed = discord.Embed(
-                title="Insufficient Permission(s)",
-                description=f"You need the **{fmt}** permission(s) to use this command.",
+                title="권한이 없습니다.",
+                description=f"**{fmt}** 권한이 필요합니다.",
                 color=0xFF0000,
             )
             await ctx.send(embed=embed)
@@ -72,8 +72,8 @@ class Errors(commands.Cog):
 
         if isinstance(error, commands.UserInputError):
             embed = discord.Embed(
-                title="Invalid Input",
-                description=f"Maybe you forgot to specify inputs or gave an extra input",
+                title="입력 값 없음",
+                description=f"추가 입력 값이 필요합니다.",
                 color=0xFF0000,
             )
             await ctx.send(embed=embed)
@@ -100,8 +100,8 @@ class Errors(commands.Cog):
 
         if isinstance(error, commands.CheckFailure):
             embed = discord.Embed(
-                title="Permissions Not Satisfied",
-                description=f"You do not have permissions to use this command",
+                title="권한이 없습니다.",
+                description=f"권한이 없어서 명령어를 실행 할 수 없습니다.",
                 color=0xFF0000,
             )
             await ctx.send(embed=embed)
