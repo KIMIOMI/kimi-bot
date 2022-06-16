@@ -138,7 +138,7 @@ class Economy(commands.Cog):
                 await ctx.send('최소 입금액을 확인해주세요.')
             else:
                 await ecomoney.update_one({"id": user.id}, {"$inc": {"wallet": -amount, "bank": +amount}})
-                await ctx.send(f'당신의 {amount} ZEN이 은행으로 입금되었습니다.')
+                await ctx.send(f'당신의 {amount} ZEN이 은행으로 입금되었습니다. 꿀꺽~')
         except Exception as e:
             await ctx.send('취..익 취이..ㄱ')
 
