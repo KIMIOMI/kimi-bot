@@ -191,7 +191,7 @@ class Economy(commands.Cog):
             else:
                 await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"bank": -amount}})
                 await ecomoney.update_one({"id": user.id}, {"$inc": {"bank": +amount}})
-                await ctx.send(f'당신이 {user.mention}에게 {amount} ZEN을 송금했습니다.')
+                await ctx.send(f'당신이 {user.mention}에게 {amount} ZEN을 송금했습니다. 더 줘 빨리 꺼억🙌')
         except Exception:
             await ctx.send('취..익 취이..ㄱ')
 
