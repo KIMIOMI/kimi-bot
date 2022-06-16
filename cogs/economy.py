@@ -311,7 +311,7 @@ class Economy(commands.Cog):
                     result = f'당신은 Hope에게 {amount} Zen을 강탈당했습니다. 약 오르지? 메렁😋'
                     _color = 0x00FF56
 
-                embed = discord.Embed(title="던져! 던져! 주사위 게임 결과!", description=None, color=_color, value="누가 누가 이겼을까? 돈놓고 돈먹기 가즈앗!")
+                embed = discord.Embed(title="던져! 던져! 주사위 게임 결과!", description="누가 누가 이겼을까? 돈놓고 돈먹기 가즈앗!", color=_color)
                 embed.add_field(name="Hope's Number", value=f":game_die: {robot_dice}", inline=True)
                 embed.add_field(name=f"{ctx.author.name}'s Number", value=f":game_die: {user_dice}", inline=True)
                 embed.set_footer(text=result)
