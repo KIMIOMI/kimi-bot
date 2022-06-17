@@ -407,11 +407,6 @@ class Economy(commands.Cog):
                     result = f"당신의 {amount} ZEN을 Hope가 강탈하지 못했습니다. Hope한테 삥뜯으려면 다시 ㄱㄱ🤡"
                     _color = 0xFAFA00
                 else:
-                    if random.randint(1, 10) == 9:
-                        amount = amount * 2
-                        result = f'잭팟! 당신은 Hope에게 {amount} Zen을 강탈당했습니다. 약 오르지? 메렁😋'
-                    else:
-                        amount = amount
                     await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
                     result = f'당신은 Hope에게 {amount} Zen을 강탈당했습니다. 약 오르지? 메렁😋'
                     _color = 0x00FF56
@@ -461,14 +456,8 @@ class Economy(commands.Cog):
                         await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +amount}})
                         _color = 0xFF0000
                     else:
-                        if random.randint(1, 10) == 9:
-                            amount = amount * 2
-                            result = f'당신은 Hope에게 완패 하였다!'
-                        else:
-                            amount = amount
-                            result = f'당신은 Hope에게 졌다!'
+                        result = f'당신은 Hope에게 졌다!'
                         await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
-
                         _color = 0x00FF56
 
                     embed = discord.Embed(title="가위바위보 게임 결과!", description="누가 누가 이겼을까? 돈놓고 돈먹기 가즈앗!", color=_color)
