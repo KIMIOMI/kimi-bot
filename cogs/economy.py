@@ -258,7 +258,7 @@ class Economy(commands.Cog):
                         f_user = user_bank - num
                         await self.update_wallet(ctx.author.id, f_mem)
                         await self.update_wallet(user.id, f_user)
-                        await ctx.send(f'You have robbed {num} ZEN from {user.mention}')
+                        await ctx.send(f'{ctx.author.mention}이 {user.mention}에게서 {num} ZEN 을 강탈하였다.')
             except Exception:
                 await ctx.send('취..익 취이..ㄱ')
 
