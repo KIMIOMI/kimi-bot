@@ -398,8 +398,8 @@ class Economy(commands.Cog):
                 robot_dice = random.randint(1, 7)
 
                 if user_dice > robot_dice:
-                    await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +(amount*2)}})
-                    result = f"당신은 Hope에게서 {amount*2} ZEN을 강탈했습니다. Hope가 분노한다👿"
+                    await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +(amount)}})
+                    result = f"당신은 Hope에게서 {amount} ZEN을 강탈했습니다. Hope가 분노한다👿"
                     _color = 0xFF0000
                 elif user_dice == robot_dice:
                     result = f"당신의 {amount} ZEN을 Hope가 강탈하지 못했습니다. Hope한테 삥뜯으려면 다시 ㄱㄱ🤡"
