@@ -348,9 +348,6 @@ class Economy(commands.Cog):
         except Exception:
             await ctx.send('취..익 취이..ㄱ')
 
-
-
-
     # A economy bot fun command
     @commands.command(aliases=["배팅"])
     @cooldown(1, 2, BucketType.user)
@@ -455,14 +452,24 @@ class Economy(commands.Cog):
                         result = f"Hope! 다시 한 번 붙어보자! 보상 X"
                         _color = 0xFAFA00
                     elif result == 1 or result == -2:
+                        if random.randint(1, 10) == 9:
+                            amount = amount * 2
+                            result = f"잭팟! 당신은 Hope에게 이겼다! (보상 : {amount})"
+                        else:
+                            amount = amount
+                            result = f"당신은 Hope에게 이겼다! (보상 : {amount})"
                         await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +amount}})
-                        result = f"당신은 Hope에게 이겼다! (보상 : {amount})"
                         _color = 0xFF0000
                     else:
+                        if random.randint(1, 10) == 9:
+                            amount = amount * 2
+                            result = f'당신은 Hope에게 완패 하였다!'
+                        else:
+                            amount = amount
+                            result = f'당신은 Hope에게 졌다!'
                         await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
-                        result = f'당신은 Hope에게 졌다!'
-                        _color = 0x00FF56
 
+                        _color = 0x00FF56
 
                     embed = discord.Embed(title="가위바위보 게임 결과!", description="누가 누가 이겼을까? 돈놓고 돈먹기 가즈앗!", color=_color)
                     embed.add_field(name="Hope", value= botEmoji, inline=True)
