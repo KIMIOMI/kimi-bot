@@ -208,7 +208,7 @@ class Economy(commands.Cog):
     # 출석체크
     @commands.command(aliases=["출첵"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(986902833871855626)
+    @is_channel(986902833871855626)
     async def gm(self, ctx):
         """ 출석체크를 통해 ZEN을 지급 받습니다. (ko : !출첵)"""
         try:
@@ -371,7 +371,7 @@ class Economy(commands.Cog):
                 num = random.randint(1, 100)
                 if num <= 50:
                     await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +round(amount/2,0)}})
-                    await ctx.send(f'당신이 승리해 Hope에게서 {round(amount/2,0)} ZEN을 빼앗았습니다. 후…. 봐줬다.')
+                    await ctx.send(f'당신이 승리해 Hope에게서 {int(round(amount/2,0))} ZEN을 빼앗았습니다. 후…. 봐줬다.')
                 else:
                     await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
                     await ctx.send(f'당신이 패배해 Hope가 {amount} ZEN을 가져갔습니다. 메렁😋')
