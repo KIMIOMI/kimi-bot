@@ -41,7 +41,7 @@ class Info(commands.Cog):
             name="Voice Channels", value=f"{vc}"
         )
         embed.add_field(
-            name="Prefix", value=f"`.`", inline=False
+            name="Prefix", value=f"`!`", inline=False
         )
         embed.set_footer(
             text=f"Requested By: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
@@ -80,7 +80,7 @@ class Info(commands.Cog):
             value="[Checkout my website](https://....)",
         )
         embed.add_field(
-            name="Made By", value="Mini.py#5183"
+            name="Made By", value="kimi#3672"
         )
         embed.set_footer(
             text=f"Requested By: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"

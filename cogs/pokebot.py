@@ -33,6 +33,10 @@ class Pokebot(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
+    async def on_ready(self):
+        print("Pokemon Cog Loaded Succesfully")
+
+    @commands.Cog.listener()
     async def on_guild_join(self, guild):
         res = servers.find_one({"_id": guild.id})
         if res is None:

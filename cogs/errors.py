@@ -100,8 +100,8 @@ class Errors(commands.Cog):
 
         if isinstance(error, commands.CheckFailure):
             embed = discord.Embed(
-                title="권한이 없습니다.",
-                description=f"권한이 없어서 명령어를 실행 할 수 없습니다.",
+                title="채널 확인!.",
+                description=f"올바른 채널에서 명령어를 사용하세요",
                 color=0xFF0000,
             )
             await ctx.send(embed=embed)
