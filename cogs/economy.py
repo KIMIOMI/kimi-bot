@@ -370,7 +370,7 @@ class Economy(commands.Cog):
             else:
                 num = random.randint(1, 100)
                 if num <= 50:
-                    await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +round(amount/2,0)}})
+                    await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +int(round(amount/2,0))}})
                     await ctx.send(f'당신이 승리해 Hope에게서 {int(round(amount/2,0))} ZEN을 빼앗았습니다. 후…. 봐줬다.')
                 else:
                     await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
