@@ -103,8 +103,8 @@ class Economy(commands.Cog):
                 )
                 await message.channel.send(embed=embed)
                 message_counter = 0
-                # event_count = random.randint(10,500)
-                event_count = 5
+                event_count = random.randint(10,250)
+                # event_count = 5
                 await ecoinfo.update_one(server, {"$set":{"event_count": event_count, "message_counter": message_counter, "event_owner": str(message.author),
                                                           "event_amount": amount, "event_time": datetime.datetime.now(), "event": True}})
             else:
@@ -217,6 +217,7 @@ class Economy(commands.Cog):
             gm_time = eco['gm_time']
             if gm_time is not None:
                 if (datetime.datetime.now() - gm_time).total_seconds() < 86400:
+                    await ctx.send("지난 출첵 부터 24시간이 지나야 다시 출첵 가능합니다.")
                     return
 
             amount = 50
