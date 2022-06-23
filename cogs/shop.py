@@ -5,16 +5,21 @@ from discord.ext.commands import BucketType, cooldown
 import motor.motor_asyncio
 import nest_asyncio
 import json
+import random
 
 with open('./data.json') as f:
     d1 = json.load(f)
-with open('./market.json') as f:
+with open('./market.json', encoding='UTF-8') as f:
     d2 = json.load(f)
 
 items = {}
 
-for x in d2["IoT"]:
-    i = {x[2] : ["iot", x[1], x[0]]}    
+for x in d2["Weapon"]:
+    i = {x[2] : ["무기", x[1], x[0]]}
+    items.update(i)
+
+for x in d2["item"]:
+    i = {list(x.keys())[0] : ["가챠", 100, list(x.keys())[0]]}
     items.update(i)
 
 for x in d2["Food"]:
@@ -35,6 +40,14 @@ cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
 ecomoney = cluster["eco"]["money"]
 ecobag = cluster["eco"]["bag"]
 
+def gotcha():
+    weights = (50 / 17, 40 / 17, 35 / 17, 30 / 17, 25 / 17, 20 / 17, 15 / 17, 10 / 17,
+               9 / 17, 8 / 17, 7 / 17, 6 / 17, 5 / 17, 4 / 17, 3 / 17, 3 / 17, 1 / 17)
+    a = random.choices(d2["item"], weights=weights)
+    name = list(a[0].keys())[0]
+
+    return name
+
 class Shop(commands.Cog):
     """ Commands related to market"""
     def __init__(self, bot):
@@ -47,9 +60,9 @@ class Shop(commands.Cog):
 
     async def open_account(self, id : int):
         if id is not None:
-            newuser = {"id": id, "wallet": 0, "bank": 100}
+            new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": []}
             # wallet = current money, bank = money in bank
-            await ecomoney.insert_one(newuser)
+            await ecomoney.insert_one(new_user)
 
     async def update_wallet(self, id : int, wallet : int):
         if id is not None:
@@ -64,54 +77,97 @@ class Shop(commands.Cog):
             newuser = {"id": id, "bag": []}
             await ecobag.insert_one(newuser)
 
+    async def update_user(self, id : int):
+        try:
+            if id is not None:
+                bal = await ecomoney.find_one({"id": id})
+                if bal is None:
+                    await self.open_account(id)
 
-    @commands.group(name="mkt", invoke_without_command=True)
+        except Exception as e:
+            print(e)
+
+    async def update_bag(self, id : int):
+        try:
+            if id is not None:
+                bag = await ecobag.find_one({"id": id})
+                if bag is None:
+                    await self.open_bag(id)
+        except:
+            print('update bag error')
+
+    @commands.group(aliases=["상점"], invoke_without_command=True)
     @cooldown(1, 2, BucketType.user)
     async def mkt(self,ctx):
-        """ Market Commands"""
+        """ 상점 (ko: !상점)"""
         embed = discord.Embed(
             timestamp=ctx.message.created_at,
-            title="Market Categories",
+            title="상점 목록",
             color=0xFF0000,
         )
         embed.add_field(
-            name="IoT",
-            value="Buy items related to IoT/Technology | Use `!mkt iot`",
+            name="무기",
+            value="무기 상점 | 사용 `!상점 무기`",
             inline=False
         )
         embed.add_field(
-            name="Food",
-            value="Buy items related to Food | Use `!mkt food`",
+            name="가챠",
+            value="가챠 상점 | 사용 `!상점 가챠템`",
             inline=False
         )
-        embed.add_field(
-            name="Cars",
-            value="Buy items related to Cars | Use `!mkt cars`",
-            inline=False
-        )
+        # embed.add_field(
+        #     name="Food",
+        #     value="Buy items related to Food | Use `!mkt food`",
+        #     inline=False
+        # )
+        # embed.add_field(
+        #     name="Cars",
+        #     value="Buy items related to Cars | Use `!mkt cars`",
+        #     inline=False
+        # )
         embed.set_footer(
-        text=f"Requested By: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
+        text=f"요청자 : {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
         )
 
         await ctx.send(embed=embed)
 
-    @mkt.command(name="iot")
+    @mkt.command(name="wp", aliases=["무기"])
     @cooldown(1, 2, BucketType.user)
-    async def iot(self,ctx):
-        """ IoT/Technology Market"""
+    async def weapon(self,ctx):
+        """ 무기 상점 """
         embed = discord.Embed(
             timestamp=ctx.message.created_at,
-            title="IoT Market",
+            title="무기 상점",
             color=0xFF0000,
         )
-        for x in d2["IoT"]:
+        for x in d2["Weapon"]:
             embed.add_field(
                 name=x[0],
-                value=f"Name {x[2]} | Price: ${x[1]}",
+                value=f"이름 {x[2]} | 가격: {x[1]} ZEN",
                 inline=False
             )
         embed.set_footer(
-            text=f"Requested By: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
+            text=f"요청자 : {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
+        )
+        await ctx.send(embed=embed)
+
+    @mkt.command(name="gatcha", aliases=["가챠템"])
+    @cooldown(1, 2, BucketType.user)
+    async def gatcha_(self,ctx):
+        """ 가챠 상점 (ko: !가챠템)"""
+        embed = discord.Embed(
+            timestamp=ctx.message.created_at,
+            title="가챠 상점",
+            color=0xFF0000,
+        )
+        for x in d2["item"]:
+            embed.add_field(
+                name=list(x.keys())[0],
+                value=f"Name {list(x.keys())[0]} | Price: 100 ZEN",
+                inline=False
+            )
+        embed.set_footer(
+            text=f"요청자 : {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
         )
         await ctx.send(embed=embed)
 
@@ -171,27 +227,22 @@ class Shop(commands.Cog):
             await ecobag.update_one({"id": id}, {"$pull": {"bag": [name, amount]}})
 
 
-    @commands.command(aliases=["b"])
+    @commands.command(aliases=["b", "산다"])
     @cooldown(1, 2, BucketType.user)
     async def buy(self, ctx, item : str, amount : int = 1):
-        """ Buy an item from the market"""
+        """ 상점에서 물건을 구입한다. (ko: !산다)"""
         if amount <= 0 or amount > 100:
-            await ctx.send("Amount must be greater than 0 or less than 100")
+            await ctx.send("한번에 최소 1개에서 최대 100개 까지 구입 가능합니다.")
             return
+        self.update_user(ctx.author.id)
         bal = await ecomoney.find_one({"id": ctx.author.id})
-        if bal is None:
-            await self.open_account(ctx.author.id)
-            bal = await ecomoney.find_one({"id": ctx.author.id})
-
+        self.update_bag(ctx.author.id)
         bag = await ecobag.find_one({"id": ctx.author.id})
-        if bag is None:
-            await self.open_bag(ctx.author.id)
-            bag = await ecobag.find_one({"id": ctx.author.id})
-        
+
         fg = items.get(item)
 
         if fg is None:
-            await ctx.send("Item not found")
+            await ctx.send("취급하지 않는 물건입니다..")
             return
 
         price = fg[1] * amount
@@ -200,7 +251,7 @@ class Shop(commands.Cog):
         u_bal = bal["bank"]
 
         if u_bal < price:
-            await ctx.send("You don't have enough money in your bank")
+            await ctx.send(f"은행에 충분한 ZEN이 없습니다. 총 가격은 {price} ZEN 입니다.")
             return
 
         await self.update_bank(ctx.author.id, u_bal - price)
@@ -211,18 +262,18 @@ class Shop(commands.Cog):
                 final_amount = amount + init_amount
                 index = bag['bag'].index(x)
                 await self.edit_item(ctx.author.id, index, final_amount)
-                await ctx.send(f"You bought {amount} {name} for ${price}")
+                await ctx.send(f"{name} {amount}개를 {price} ZEN에 구입하였습니다.")
                 return
 
         await self.add_item(ctx.author.id, item, amount)
-        await ctx.send(f"You bought {amount} {name} for ${price}")   
+        await ctx.send(f"{name} {amount}개를 {price} ZEN에 구입하였습니다.")
 
-    @commands.command(aliases=["s"])
+    @commands.command(aliases=["s", "판다"])
     @cooldown(1, 2, BucketType.user)
     async def sell(self, ctx, item : str, amount : int = 1):
-        """ Sell items from your bag """
+        """ 상점에 물건을 판매합니다. (ko: !판다) """
         if amount <= 0 or amount > 100:
-            await ctx.send("Amount must be greater than 0 or less than 0")
+            await ctx.send("최소 수량 1개, 최대 수량 100개 판매 가능합니다.")
             return
         bal = await ecomoney.find_one({"id": ctx.author.id})
         if bal is None:
@@ -237,7 +288,7 @@ class Shop(commands.Cog):
         fg = items.get(item)
 
         if fg is None:
-            await ctx.send("Item not found")
+            await ctx.send("취급하지 않는 물건입니다.")
             return
 
         price = fg[1]
@@ -249,14 +300,14 @@ class Shop(commands.Cog):
             if x[0] == item:
                 init_amount = x[1]
                 if amount > init_amount:
-                    await ctx.send("You don't have enough of this item")
+                    await ctx.send("수량을 다시 확인해주세요")
                     return
                 elif amount == init_amount:
                     price = int(round(price * init_amount * 0.7,0))
                     index = bag['bag'].index(x)
                     await self.remove_item(ctx.author.id, item, init_amount)
                     await self.update_bank(ctx.author.id, u_bal + price)
-                    await ctx.send(f"You sold {amount} {name} for ${price}")
+                    await ctx.send(f"{name} {amount}개를 {price} ZEN에 판매하였습니다.")
                     return
 
                 else:
@@ -265,19 +316,61 @@ class Shop(commands.Cog):
                     index = bag['bag'].index(x)
                     await self.edit_item(ctx.author.id, index, final_amount)
                     await self.update_bank(ctx.author.id, u_bal + price)
-                    await ctx.send(f"You sold {amount} {name} for ${price}")
+                    await ctx.send(f"{name} {amount}개를 {price} ZEN에 판매하였습니다.")
                     return
 
-        await ctx.send("You don't have this item")
+        await ctx.send("없는 물건은 못 팝니다.")
 
-    @commands.command(aliases=["i"])
+    @commands.command(aliases=["가챠"])
+    @cooldown(1, 2, BucketType.user)
+    async def gatcha(self, ctx):
+        """ 가챠 (ko: !가챠)"""
+
+        self.update_user(ctx.author.id)
+        bal = await ecomoney.find_one({"id": ctx.author.id})
+        self.update_bag(ctx.author.id)
+        bag = await ecobag.find_one({"id": ctx.author.id})
+
+        item = gotcha()
+        fg = items.get(item)
+
+        if fg is None:
+            await ctx.send("취급하지 않는 물건입니다..")
+            return
+        amount = 1
+        price = fg[1] * amount
+        name = fg[2]
+
+
+        u_bal = bal["bank"]
+
+        if u_bal < price:
+            await ctx.send(f"은행에 충분한 ZEN이 없습니다. 총 가격은 {price} ZEN 입니다.")
+            return
+
+        await self.update_bank(ctx.author.id, u_bal - price)
+
+        for x in bag['bag']:
+            if x[0] == item:
+                init_amount = x[1]
+                final_amount = amount + init_amount
+                index = bag['bag'].index(x)
+                await self.edit_item(ctx.author.id, index, final_amount)
+                await ctx.send(f"축하합니다. {name}를 뽑았습니다. 총 수량 : {final_amount}")
+                return
+
+        await self.add_item(ctx.author.id, item, amount)
+        await ctx.send(f"축하합니다. {name}를 뽑았습니다. 총 수량 : 1")
+
+    @commands.command(aliases=["i", "가방"])
     @cooldown(1, 2, BucketType.user)
     async def inventory(self, ctx, page : int = 1):
-        """ Checkout your inventory. For more than one page, use the page number.
-        {1 : "0-9", 2 : "10-20", 3 : "20-30", 4 : "30-40", 5 : "40-50"} - Page and item number
+        """ 가방을 확인합니다. (ko: !가방)
+        물건이 많으면 페이지 넘버를 입력해주세요
+        {1 : "0-9", 2 : "10-20", 3 : "20-30", 4 : "30-40", 5 : "40-50"} - 페이지, 아이템 수량
         """
         if page > 5 or page < 1:
-            await ctx.send("Page must be between 1 and 5")
+            await ctx.send("페이지는 1에서 5까지 입니다.")
             return
         bal = await ecomoney.find_one({"id": ctx.author.id})
         if bal is None:
@@ -295,14 +388,14 @@ class Shop(commands.Cog):
         for x in bag['bag']:
             total += 1
         if total == 0:
-            await ctx.send("Your bag is empty")
+            await ctx.send("가방이 비어있습니다.")
             return
         
         page_items = bag['bag'][int(intial):int(final)+1]
 
         embed = discord.Embed(
-            title=f"{ctx.author.name}'s Inventory",
-            description=f"Page {page} | Total Items In Inventory: {total}",
+            title=f"{ctx.author.name}의 가방",
+            description=f"페이지 {page} | 아이템 개수: {total}",
             color=0xFF0000
             )
         for x in page_items:
@@ -310,10 +403,34 @@ class Shop(commands.Cog):
             embed.add_field(name=fg[2], value=f"{x[1]}", inline=False)
 
         embed.set_footer(
-            text=f"Requested By: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
+            text=f"요청자 : {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
         )
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["item", "템"])
+    @cooldown(1, 2, BucketType.user)
+    async def infoitem(self, ctx, *, ss: str):
+        for i, x in enumerate(d2["item"]):
+            if ss in x:
+                a = x[ss]
+        if a is None:
+            await ctx.send("없는 템 입니다.")
+        else:
+            stats = f'공격력: {a["att"]}\n방어력: {a["def"]}\nHP: {a["health"]}\n'
+            upProbability = a["강화확률"]
+            upPrice = a["강화비용"]
+
+            embed = discord.Embed(
+                title=f'{ss}',
+                color=discord.Color.gold()
+            )
+
+            embed.set_thumbnail(url=a["image"])
+            embed.add_field(name="Stats", value=stats, inline=True)
+            embed.add_field(name="강화확률", value=upProbability, inline=True)
+            embed.add_field(name="강화비용", value=upPrice, inline=True)
+
+            await ctx.send(embed=embed)
     # leaderboard
     @commands.command(aliases=["lb"])
     @cooldown(1, 2, BucketType.user)

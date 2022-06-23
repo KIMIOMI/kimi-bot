@@ -45,9 +45,10 @@ class Echo(commands.Bot):
         print(f"[ Log ] GateWay WebSocket Latency: {self.latency*1000:.1f} ms")
 
 with open('./data.json') as f:
-  d1 = json.load(f)
-with open('./market.json') as f:
-  d2 = json.load(f)
+    d1 = json.load(f)
+with open('./market.json', encoding='UTF-8') as f:
+    d2 = json.load(f)
+
 
 def bot_info():
     return d1

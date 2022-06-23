@@ -11,8 +11,9 @@ import random
 
 with open('./data.json') as f:
     d1 = json.load(f)
-with open('./market.json') as f:
+with open('./market.json', encoding='UTF-8') as f:
     d2 = json.load(f)
+
 
 land = d2["Land"]
 
@@ -30,6 +31,21 @@ def is_channel(channelId):
     def predicate(ctx):
         return ctx.message.channel.id == channelId
     return commands.check(predicate)
+
+def splitMoney(amount, n):
+    a = amount
+    avg_amount = round(amount / n)
+
+    pieces = []
+    for idx in range(1, n):
+        remainer = a - sum(pieces)
+        at_least = (n - idx) * avg_amount
+        max_amount = remainer - at_least
+
+        amount = random.randint(1, max_amount)
+        pieces.append(random.randint(1, amount))
+    pieces.append(a - sum(pieces))
+    return pieces
 
 class Economy(commands.Cog):
     """ Commands related to economy"""
@@ -132,7 +148,7 @@ class Economy(commands.Cog):
 
     @commands.command(aliases=["bal", "자산"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    # @is_channel(986902833871855626)
     async def balance(self, ctx, user: discord.Member = None):
         """ 당신의 자산을 확인합니다.(ko: !자산) """
         if user is None:
@@ -286,6 +302,47 @@ class Economy(commands.Cog):
         except Exception:
             await ctx.send('취..익 취이..ㄱ')
 
+    # send money to another user
+    @commands.command(aliases=["돈뿌리기", "ga"])
+    @cooldown(1, 2, BucketType.user)
+    # @is_channel(986902833871855626)
+    async def giveaway(self, ctx, amount: int):
+        """ 지갑에 있는 ZEN을 랜덤하게 뿌립니다.(ko : !돈뿌리기)"""
+        try:
+            await self.update_user(ctx.author.id)
+            member_bal = await ecomoney.find_one({"id": ctx.author.id})
+            mem_wallet = member_bal["wallet"]
+            if amount > mem_wallet or amount > 10000:
+                await ctx.send('금액을 확인해주세요(1회 최대 10,000ZEN 만 뿌릴 수 있습니다.)')
+            elif amount <= 0:
+                await ctx.send('최소 금액을 다시 확인해주세요.')
+            else:
+                await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
+                # await ecomoney.update_one({"id": 987293637769560085}, {"$inc": {"wallet": +amount}})
+                await ctx.send(f'{ctx.author.mention}이 {amount} ZEN을 뿌렸습니다. 어서어서들 줍줍 ㄱㄱ')
+
+                number_of_member = len(ctx.guild.members)
+                number_of_selected_member = random.randint(10, 20)
+
+
+                if number_of_selected_member > number_of_member:
+                    number_of_selected_member = number_of_member
+                print(number_of_selected_member)
+                split_money = splitMoney(amount, number_of_selected_member)
+                print(split_money)
+                for money in split_money:
+                    select_index = random.randint(0, number_of_member - 1)
+                    print(select_index)
+                    selected_member = ctx.guild.members[select_index]
+
+                    await self.update_user(selected_member.id)
+                    await ecomoney.update_one({"id": selected_member.id}, {"$inc": {"wallet": +money}})
+                    await ctx.send(f'{selected_member.mention}이 {money}를 받았습니다.')
+
+        except Exception as e:
+            print(e)
+            await ctx.send('취..익 취이..ㄱ')
+                
     # grant money to user
     @commands.command(aliases=["gt", "지급"])
     @commands.has_role("mods")
@@ -345,6 +402,33 @@ class Economy(commands.Cog):
             await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"bank": -price}})
             await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"land": amount}})
             await ctx.send(f"축하합니다! 당신이 {price} ZEN을 이용해 마하드비파 영토 {amount}평을 구매했습니다. 구웃~👍 추매 해서 땅부자가 되보자!")
+        except Exception:
+            await ctx.send('취..익 취이..ㄱ')
+
+    # send your land to another user
+    @commands.command(aliases=["땅증여"])
+    @cooldown(1, 2, BucketType.user)
+    # @is_channel(986902833871855626)
+    async def sendland(self, ctx, user: discord.Member, amount: int):
+        """ 보유중인 땅을 다른 사람에게 증여합니다.(ko : !땅증여)"""
+        try:
+            if ctx.author.id == user.id:
+                await ctx.send('자기 자신에게 증여할 수 없습니다.')
+            else:
+                await self.update_user(user.id)
+                await self.update_user(ctx.author.id)
+                user_bal = await ecomoney.find_one({"id": user.id})
+                member_bal = await ecomoney.find_one({"id": ctx.author.id})
+                mem_land = member_bal["land"]
+                user_bank = user_bal["land"]
+                if amount > mem_land or amount > 100:
+                    await ctx.send('증여할 땅 수량을 다시 확인하세요(1회 최대 100평의 땅을 증여 할 수 있습니다.)')
+                elif amount <= 0:
+                    await ctx.send('땅 수량을 다시 확인하세요')
+                else:
+                    await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"land": -amount}})
+                    await ecomoney.update_one({"id": user.id}, {"$inc": {"land": +amount}})
+                    await ctx.send(f'{ctx.author.mention}이 {user.mention}에게 {amount}평의 땅을 송금했습니다.')
         except Exception:
             await ctx.send('취..익 취이..ㄱ')
 

@@ -12,7 +12,7 @@ import motor.motor_asyncio
 
 with open('./data.json') as f:
     d1 = json.load(f)
-with open('./market.json') as f:
+with open('./market.json', encoding='UTF-8') as f:
     d2 = json.load(f)
 
 mongo_url = d1['mongo']
