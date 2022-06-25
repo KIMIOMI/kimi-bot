@@ -88,6 +88,7 @@ class Economy(commands.Cog):
                 bal = await ecomoney.find_one({"id": id})
                 if bal is None:
                     await self.open_account(id)
+                    bal = await ecomoney.find_one({"id": id})
                 for key in self.key:
                     if key in bal:
                         pass
@@ -415,7 +416,7 @@ class Economy(commands.Cog):
     # send your land to another user
     @commands.command(aliases=["땅증여"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(986902833871855626)
+    @is_channel(986902833871855626)
     async def sendland(self, ctx, user: discord.Member, amount: int):
         """ 보유중인 땅을 다른 사람에게 증여합니다.(ko : !땅증여)"""
         try:
