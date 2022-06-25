@@ -14,7 +14,6 @@ with open('./data.json') as f:
 with open('./market.json', encoding='UTF-8') as f:
     d2 = json.load(f)
 
-
 land = d2["Land"]
 
 # print(land)
@@ -27,10 +26,13 @@ cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
 ecomoney = cluster["eco"]["money"]
 ecoinfo = cluster["eco"]["info"]
 
+
 def is_channel(channelId):
     def predicate(ctx):
         return ctx.message.channel.id == channelId
+
     return commands.check(predicate)
+
 
 def splitMoney(amount, n):
     a = amount
@@ -47,38 +49,40 @@ def splitMoney(amount, n):
     pieces.append(a - sum(pieces))
     return pieces
 
+
 class Economy(commands.Cog):
     """ Commands related to economy"""
+
     def __init__(self, bot):
         self.bot = bot
-        self.key = ["id", "wllet", "bank", "land", "wage", "inventory"]
+        self.key = ["id", "wallet", "bank", "land", "wage", "inventory", "gm_time"]
 
     @commands.Cog.listener()
     async def on_ready(self):
         print("Eco Cog Loaded Succesfully")
 
-    async def open_account(self, id : int):
-            new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": []}
-            # wallet = current money, bank = money in bank
-            await ecomoney.insert_one(new_user)
+    async def open_account(self, id: int):
+        new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": []}
+        # wallet = current money, bank = money in bank
+        await ecomoney.insert_one(new_user)
 
-    async def update_wallet(self, id : int, wallet : int):
+    async def update_wallet(self, id: int, wallet: int):
         if id is not None:
             await ecomoney.update_one({"id": id}, {"$set": {"wallet": wallet}})
 
-    async def update_bank(self, id : int, bank : int):
+    async def update_bank(self, id: int, bank: int):
         if id is not None:
             await ecomoney.update_one({"id": id}, {"$set": {"bank": bank}})
 
-    async def add_wallet(self, id : int, amount : int):
+    async def add_wallet(self, id: int, amount: int):
         if id is not None:
             await ecomoney.update_one({"id": id}, {"$inc": {"wallet": amount}})
 
-    async def add_land(self, id : int, amount : int):
+    async def add_land(self, id: int, amount: int):
         if id is not None:
             await ecomoney.update_one({"id": id}, {"$inc": {"wallet": amount}})
 
-    async def update_user(self, id : int):
+    async def update_user(self, id: int):
         try:
             if id is not None:
                 bal = await ecomoney.find_one({"id": id})
@@ -88,8 +92,9 @@ class Economy(commands.Cog):
                     if key in bal:
                         pass
                     else:
-                        a = lambda key: 100 if key == "bank" else 0
-                        await ecomoney.update_one({"id": id}, {"$set": {key : a(key)}})
+                        a = lambda key: 100 if key == "bank" else (
+                            datetime.datetime.now() - datetime.timedelta(days=1, hours=1) if key == "gm_time" else 0)
+                        await ecomoney.update_one({"id": id}, {"$set": {key: a(key)}})
         except Exception as e:
             print(e)
 
@@ -110,7 +115,7 @@ class Economy(commands.Cog):
 
             if message_counter + 1 >= event_count:
                 # event occur
-                amount = random.randint(100,1000)
+                amount = random.randint(100, 1000)
                 embed = discord.Embed(
                     title=f'하늘에서 ZEN이 떨어졌다! 지나가던 {message.author}가 {amount} ZEN 뭉치를 발견하였다!!',
                     description=f"{message.author}는 얼른 ZEN 을 획득하기 위해서'줍기'를 입력하라구!"
@@ -119,10 +124,12 @@ class Economy(commands.Cog):
                 )
                 await message.channel.send(embed=embed)
                 message_counter = 0
-                event_count = random.randint(10,250)
+                event_count = random.randint(10, 250)
                 # event_count = 5
-                await ecoinfo.update_one(server, {"$set":{"event_count": event_count, "message_counter": message_counter, "event_owner": str(message.author),
-                                                          "event_amount": amount, "event_time": datetime.datetime.now(), "event": True}})
+                await ecoinfo.update_one(server, {
+                    "$set": {"event_count": event_count, "message_counter": message_counter,
+                             "event_owner": str(message.author),
+                             "event_amount": amount, "event_time": datetime.datetime.now(), "event": True}})
             else:
                 message_counter += 1
                 if event == True:
@@ -134,21 +141,23 @@ class Economy(commands.Cog):
                         if str(message.author) == str(event_owner):
                             if str(message.content) == "줍기":
                                 print(server)
-                                await ecoinfo.update_one(server, {"$set":{"message_counter": message_counter, "event": False}})
-                                await ecomoney.update_one({"id": message.author.id}, {"$inc": {"wallet": +event_amount}})
+                                await ecoinfo.update_one(server,
+                                                         {"$set": {"message_counter": message_counter, "event": False}})
+                                await ecomoney.update_one({"id": message.author.id},
+                                                          {"$inc": {"wallet": +event_amount}})
                                 await message.channel.send(f'축하합니다. {message.author}가 {event_amount} ZEN을 획득하였습니다.')
                     else:
                         if str(message.content) == "줍기":
-                            await ecoinfo.update_one(server, {"$set":{"message_counter": message_counter, "event": False}})
+                            await ecoinfo.update_one(server,
+                                                     {"$set": {"message_counter": message_counter, "event": False}})
                             await ecomoney.update_one({"id": message.author.id}, {"$inc": {"wallet": +event_amount}})
                             await message.channel.send(f'축하합니다. {message.author}가 {event_amount} ZEN을 획득하였습니다.')
                 else:
                     await ecoinfo.update_one(server, {"$set": {"message_counter": message_counter}})
 
-
     @commands.command(aliases=["bal", "자산"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(986902833871855626)
+    @is_channel(986902833871855626)
     async def balance(self, ctx, user: discord.Member = None):
         """ 당신의 자산을 확인합니다.(ko: !자산) """
         if user is None:
@@ -240,7 +249,6 @@ class Economy(commands.Cog):
             for role in ctx.author.roles:
                 if role.id == 950255167264141412 or role.id == 950255426740568105 or role.id == 950255295786016768:
                     amount = 100
-            print(amount)
             await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"bank": +amount}})
             await ecomoney.update_one({"id": ctx.author.id}, {"$set": {"gm_time": datetime.datetime.now()}})
             await ctx.send(f'{ctx.author.mention} 에게 {amount} ZEN을 지급했습니다.')
@@ -305,7 +313,7 @@ class Economy(commands.Cog):
     # send money to another user
     @commands.command(aliases=["돈뿌리기", "ga"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(986902833871855626)
+    @is_channel(986902833871855626)
     async def giveaway(self, ctx, amount: int):
         """ 지갑에 있는 ZEN을 랜덤하게 뿌립니다.(ko : !돈뿌리기)"""
         try:
@@ -324,7 +332,6 @@ class Economy(commands.Cog):
                 number_of_member = len(ctx.guild.members)
                 number_of_selected_member = random.randint(10, 20)
 
-
                 if number_of_selected_member > number_of_member:
                     number_of_selected_member = number_of_member
                 print(number_of_selected_member)
@@ -342,13 +349,13 @@ class Economy(commands.Cog):
         except Exception as e:
             print(e)
             await ctx.send('취..익 취이..ㄱ')
-                
+
     # grant money to user
     @commands.command(aliases=["gt", "지급"])
     @commands.has_role("mods")
     @cooldown(1, 2, BucketType.user)
     @is_channel(986902833871855626)
-    async def grant(self, ctx, user : discord.Member, amount : int):
+    async def grant(self, ctx, user: discord.Member, amount: int):
         """ 유저에게 ZEN을 지급합니다.(관리자용) (ko : !지급)"""
         try:
             await self.update_user(user.id)
@@ -446,13 +453,13 @@ class Economy(commands.Cog):
                 await ctx.send('지갑에 잔고가 부족합니다.')
             elif amount <= 0:
                 await ctx.send('0 ZEN 이상을 배팅해주세요.')
-            elif amount > 1000:
-                await ctx.send('최대 1000 ZEN 만 배팅 가능합니다.')
+            # elif amount > 1000:
+            #     await ctx.send('최대 1000 ZEN 만 배팅 가능합니다.')
             else:
                 num = random.randint(1, 100)
                 if num <= 50:
-                    await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +int(round(amount/2,0))}})
-                    await ctx.send(f'당신이 승리해 Hope에게서 {int(round(amount/2,0))} ZEN을 빼앗았습니다. 후…. 봐줬다.')
+                    await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +int(round(amount / 2, 0))}})
+                    await ctx.send(f'당신이 승리해 Hope에게서 {int(round(amount / 2, 0))} ZEN을 빼앗았습니다. 후…. 봐줬다.')
                 else:
                     await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
                     await ctx.send(f'당신이 패배해 Hope가 {amount} ZEN을 가져갔습니다. 메렁😋')
@@ -472,8 +479,8 @@ class Economy(commands.Cog):
                 await ctx.send('지갑에 잔고가 부족합니다.')
             elif amount <= 0:
                 await ctx.send('0 ZEN 이상을 배팅해주세요.')
-            elif amount > 1000:
-                await ctx.send('최대 1000 ZEN 만 배팅 가능합니다.')
+            # elif amount > 1000:
+            #     await ctx.send('최대 1000 ZEN 만 배팅 가능합니다.')
             else:
                 user_dice = random.randint(1, 7)
                 robot_dice = random.randint(1, 7)
@@ -507,7 +514,7 @@ class Economy(commands.Cog):
     @commands.command(aliases=["가바보"])
     @cooldown(1, 2, BucketType.user)
     @is_channel(986902319574700052)
-    async def rps(self, ctx, userRPS : str, amount: int):
+    async def rps(self, ctx, userRPS: str, amount: int):
         """ 가위바위보 게임을 시작합니다. (ko : !가바보) 최대 1000 ZEN"""
         try:
             await self.update_user(ctx.author.id)
@@ -517,8 +524,8 @@ class Economy(commands.Cog):
                 await ctx.send('지갑에 잔고가 부족합니다.')
             elif amount <= 0:
                 await ctx.send('0 ZEN 이상을 배팅해주세요.')
-            elif amount > 1000:
-                await ctx.send('최대 1000 ZEN 만 배팅 가능합니다.')
+            # elif amount > 10000:
+            #     await ctx.send('최대 1000 ZEN 만 배팅 가능합니다.')
             else:
                 rps_table = ['가위', '바위', '보']
                 if userRPS in rps_table:
@@ -545,7 +552,7 @@ class Economy(commands.Cog):
                         _color = 0x00FF56
 
                     embed = discord.Embed(title="가위바위보 게임 결과!", description="누가 누가 이겼을까? 돈놓고 돈먹기 가즈앗!", color=_color)
-                    embed.add_field(name="Hope", value= botEmoji, inline=True)
+                    embed.add_field(name="Hope", value=botEmoji, inline=True)
                     embed.add_field(name=f"{ctx.author.name}", value=userEmoji, inline=True)
                     embed.set_footer(text=result)
                     await ctx.send(embed=embed)
@@ -553,6 +560,7 @@ class Economy(commands.Cog):
                     await ctx.send("가위 바위 보 중에 하나를 선택하세요.")
         except Exception:
             await ctx.send('취..익 취이..ㄱ')
+
 
 def setup(bot):
     bot.add_cog(Economy(bot))

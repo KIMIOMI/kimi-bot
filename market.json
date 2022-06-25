@@ -13,184 +13,167 @@
             "def" : 5,
             "health" : 25,
             "강화확률": 25,
-            "강화비용" : 10,
-            "뽑기확률" : 2.9
+            "강화비용" : 10
           }
         },
         {
           "저스틴썬의 어나운스워드": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
+            "att": 3,
+            "def": 20,
+            "health": 30,
             "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "강화비용": 15
           }
         },
         {
           "히로GM의 얇은 펜촉" : {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att" : 9,
-            "def" : 5,
-            "health" : 25,
+            "att" : 8,
+            "def" : 10,
+            "health" : 35,
             "강화확률": 25,
-            "강화비용" : 10,
-            "뽑기확률" : 2.9
+            "강화비용" : 15
           }
         },
         {
           "조자룡의 청공검": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
+            "att": 10,
+            "def": 10,
+            "health": 40,
             "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "강화비용": 25
           }
         },
         {
           "반짝거리는 루팡의 안경": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
+            "att": 15,
+            "def": 0,
+            "health": 80,
             "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "강화비용": 25
           }
         },
         {
           "굳건한 세일러의 바이블": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 12,
+            "def": 12,
+            "health": 50,
+            "강화확률": 20,
+            "강화비용": 30
           }
         },
         {
           "밤 하늘 별의 기운을 담은 칠성검": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 20,
+            "def": 15,
+            "health": 45,
+            "강화확률": 20,
+            "강화비용": 30
           }
         },
         {
           "날카로운 별운검": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 25,
+            "def": 18,
+            "health": 60,
+            "강화확률": 15,
+            "강화비용": 35
           }
         },
         {
           "힘법사 간랄프의 지팡이": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
+            "att": 45,
             "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "health": 30,
+            "강화확률": 15,
+            "강화비용": 35
           }
         },
         {
           "무뎌진 비탈릭의 죽창": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 30,
+            "def": 20,
+            "health": 50,
+            "강화확률": 10,
+            "강화비용": 40
           }
         },
         {
           "리니지에서 훔쳐온 진명왕의 집행검": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 33,
+            "def": 3,
+            "health": 333,
+            "강화확률": 10,
+            "강화비용": 40
           }
         },
         {
           "이순신 장군의 사인검": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 40,
+            "def": 25,
+            "health": 60,
+            "강화확률": 10,
+            "강화비용": 50
           }
         },
         {
           "일왕에게 뺏어온 칠지도": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 45,
+            "def": 30,
+            "health": 70,
+            "강화확률": 10,
+            "강화비용": 50
           }
         },
         {
           "여동빈의 보검": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 50,
+            "def": 25,
+            "health": 100,
+            "강화확률": 10,
+            "강화비용": 50
           }
         },
         {
           "단단한 이층아저씨의 맥주병": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 60,
+            "def": 50,
+            "health": 150,
+            "강화확률": 5,
+            "강화비용": 100
           }
         },
         {
           "꼿꼿한 청묘의 수염": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 100,
+            "def": 25,
+            "health": 120,
+            "강화확률": 5,
+            "강화비용": 100
           }
         },
         {
           "사토시의프라이빗키": {
             "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
-            "att": 9,
-            "def": 5,
-            "health": 25,
-            "강화확률": 25,
-            "강화비용": 10,
-            "뽑기확률": 2.9
+            "att": 125,
+            "def": 85,
+            "health": 200,
+            "강화확률": 3,
+            "강화비용": 100
           }
         }
     ],
