@@ -103,7 +103,7 @@ class Shop(commands.Cog):
 
     @commands.group(aliases=["상점"], invoke_without_command=True)
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    @is_channel(956377522549981216)
     async def mkt(self,ctx):
         """ 상점 (ko: !상점)"""
         embed = discord.Embed(
@@ -139,7 +139,7 @@ class Shop(commands.Cog):
 
     @mkt.command(name="wp", aliases=["무기"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    @is_channel(956377522549981216)
     async def weapon(self,ctx):
         """ 무기 상점 """
         embed = discord.Embed(
@@ -160,7 +160,7 @@ class Shop(commands.Cog):
 
     @mkt.command(name="gatcha", aliases=["가챠템"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    @is_channel(956377522549981216)
     async def gatcha_(self,ctx):
         """ 가챠 상점 (ko: !가챠템)"""
         embed = discord.Embed(
@@ -239,7 +239,7 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["b", "산다"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    @is_channel(956377522549981216)
     async def buy(self, ctx, item : str, amount : int = 1):
         """ 상점에서 물건을 구입한다. (ko: !산다)"""
         if amount <= 0 or amount > 100:
@@ -281,7 +281,7 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["s", "판다"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    @is_channel(956377522549981216)
     async def sell(self, ctx, item : str, amount : int = 1):
         """ 상점에 물건을 판매합니다. (ko: !판다) """
         if amount <= 0 or amount > 100:
@@ -335,7 +335,7 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["가챠"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    @is_channel(956377522549981216)
     async def gatcha(self, ctx):
         """ 가챠 (ko: !가챠)"""
 
@@ -377,7 +377,7 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["i", "가방"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    @is_channel(956377522549981216)
     async def inventory(self, ctx, page : int = 1):
         """ 가방을 확인합니다. (ko: !가방)
         물건이 많으면 페이지 넘버를 입력해주세요
@@ -423,7 +423,7 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["item", "템"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    @is_channel(956377522549981216)
     async def infoitem(self, ctx, *, ss: str):
         for i, x in enumerate(d2["item"]):
             if ss in x:
