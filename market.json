@@ -1,9 +1,49 @@
 {
     "Weapon" : [
-        ["죽도",10,"죽도"],
-        ["목검",100,"목검"],
-        ["청동검",300,"청동검"],
-        ["철검",500,"철검"]
+      {
+        "죽도": {
+          "price": 10,
+          "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
+          "att": 5,
+          "def": 1,
+          "health": 20,
+          "강화확률": "-",
+          "강화비용": "-"
+        }
+      },
+      {
+        "목검": {
+          "price": 100,
+          "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
+          "att": 10,
+          "def": 3,
+          "health": 30,
+          "강화확률": "-",
+          "강화비용": "-"
+        }
+      },
+      {
+        "청동검": {
+          "price": 300,
+          "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
+          "att": 15,
+          "def": 5,
+          "health": 50,
+          "강화확률": "-",
+          "강화비용": "-"
+        }
+      },
+      {
+        "철검" : {
+          "price": 500,
+          "image": "https://lh3.googleusercontent.com/C4Abg6TYrN_GdI6L2N_t-NnX9Qurcokg86VmwolYUeh8-BkfXuCuQJVBVYA_TkSPZP0D9XriTsaU-wwKtbISkVJOFw6qI_58g0CabA=w600",
+          "att" : 20,
+          "def" : 10,
+          "health" : 100,
+          "강화확률" : "-",
+          "강화비용" : "-"
+        }
+      }
     ],
     "item": [
         {

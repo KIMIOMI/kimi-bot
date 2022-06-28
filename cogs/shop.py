@@ -15,7 +15,8 @@ with open('./market.json', encoding='UTF-8') as f:
 items = {}
 
 for x in d2["Weapon"]:
-    i = {x[2] : ["무기", x[1], x[0]]}
+    name = list(x.keys())[0]
+    i = {list(x.keys())[0]: ["무기", x[name]['price'], list(x.keys())[0]]}
     items.update(i)
 
 for x in d2["item"]:
@@ -41,8 +42,8 @@ ecomoney = cluster["eco"]["money"]
 ecobag = cluster["eco"]["bag"]
 
 def gotcha():
-    weights = (50 / 17, 40 / 17, 35 / 17, 30 / 17, 25 / 17, 20 / 17, 15 / 17, 10 / 17,
-               9 / 17, 8 / 17, 7 / 17, 6 / 17, 5 / 17, 4 / 17, 3 / 17, 3 / 17, 1 / 17)
+    # weights = (50 / 17, 40 / 17, 35 / 17, 30 / 17, 25 / 17, 20 / 17, 15 / 17, 10 / 17, 9 / 17, 8 / 17, 7 / 17, 6 / 17, 5 / 17, 4 / 17, 3 / 17, 3 / 17, 1 / 17)
+    weights = (80, 20, 10, 5, 25, 20, 15, 10, 9, 8, 7, 6, 5, 4, 3, 3, 1)
     a = random.choices(d2["item"], weights=weights)
     name = list(a[0].keys())[0]
 
@@ -148,9 +149,10 @@ class Shop(commands.Cog):
             color=0xFF0000,
         )
         for x in d2["Weapon"]:
+            name = list(x.keys())[0]
             embed.add_field(
                 name=x[0],
-                value=f"이름 {x[2]} | 가격: {x[1]} ZEN",
+                value=f"이름 {list(x.keys())[0]} | 가격: {x[name]['price']} ZEN",
                 inline=False
             )
         embed.set_footer(
@@ -169,9 +171,10 @@ class Shop(commands.Cog):
             color=0xFF0000,
         )
         for x in d2["item"]:
+            name = list(x.keys())[0]
             embed.add_field(
                 name=list(x.keys())[0],
-                value=f"Name {list(x.keys())[0]} | Price: 100 ZEN",
+                value=f"Name {name} | Price: {x[name]['price']} ZEN",
                 inline=False
             )
         embed.set_footer(
@@ -245,10 +248,16 @@ class Shop(commands.Cog):
         if amount <= 0 or amount > 100:
             await ctx.send("한번에 최소 1개에서 최대 100개 까지 구입 가능합니다.")
             return
-        self.update_user(ctx.author.id)
+
         bal = await ecomoney.find_one({"id": ctx.author.id})
-        self.update_bag(ctx.author.id)
+        if bal is None:
+            await self.open_account(ctx.author.id)
+            bal = await ecomoney.find_one({"id": ctx.author.id})
+
         bag = await ecobag.find_one({"id": ctx.author.id})
+        if bag is None:
+            await self.open_bag(ctx.author.id)
+            bag = await ecobag.find_one({"id": ctx.author.id})
 
         fg = items.get(item)
 
@@ -339,10 +348,15 @@ class Shop(commands.Cog):
     async def gatcha(self, ctx):
         """ 가챠 (ko: !가챠)"""
 
-        self.update_user(ctx.author.id)
         bal = await ecomoney.find_one({"id": ctx.author.id})
-        self.update_bag(ctx.author.id)
+        if bal is None:
+            await self.open_account(ctx.author.id)
+            bal = await ecomoney.find_one({"id": ctx.author.id})
+
         bag = await ecobag.find_one({"id": ctx.author.id})
+        if bag is None:
+            await self.open_bag(ctx.author.id)
+            bag = await ecobag.find_one({"id": ctx.author.id})
 
         item = gotcha()
         fg = items.get(item)
@@ -425,9 +439,14 @@ class Shop(commands.Cog):
     @cooldown(1, 2, BucketType.user)
     @is_channel(956377522549981216)
     async def infoitem(self, ctx, *, ss: str):
+        a = None
         for i, x in enumerate(d2["item"]):
             if ss in x:
                 a = x[ss]
+        for i, x in enumerate(d2["Weapon"]):
+            if ss in x:
+                a = x[ss]
+
         if a is None:
             await ctx.send("없는 템 입니다.")
         else:
@@ -444,7 +463,6 @@ class Shop(commands.Cog):
             embed.add_field(name="Stats", value=stats, inline=True)
             embed.add_field(name="강화확률", value=upProbability, inline=True)
             embed.add_field(name="강화비용", value=upPrice, inline=True)
-
             await ctx.send(embed=embed)
     # leaderboard
     @commands.command(aliases=["lb"])

@@ -9,3 +9,4 @@ aiohttp
 discord[voice]
 requests
 pymongo
+Flask

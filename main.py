@@ -6,13 +6,12 @@ import discord
 import json
 
 from discord.ext import commands
+from discord.utils import get
 from pretty_help import PrettyHelp
-
 
 class Echo(commands.Bot):
     def __init__(self):
         self.description = """WORLD OF AGE OF ZEN"""       # change bot description
-
         super().__init__(
             command_prefix={"!"},                           # change prefix here
             owner_ids={847032918747512872},                 # change server owner id
@@ -54,7 +53,6 @@ def bot_info():
     return d1
 def market_info():
     return d2
-
 TOKEN = d1['token']
 bot = Echo()
 
