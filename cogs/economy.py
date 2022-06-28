@@ -62,7 +62,7 @@ class Economy(commands.Cog):
         print("Eco Cog Loaded Succesfully")
 
     async def open_account(self, id: int):
-        new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": []}
+        new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": [], "gm_time": datetime.datetime.now() - datetime.timedelta(days=1, hours=1)}
         # wallet = current money, bank = money in bank
         await ecomoney.insert_one(new_user)
 

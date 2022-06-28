@@ -6,6 +6,7 @@ import motor.motor_asyncio
 import nest_asyncio
 import json
 import random
+import datetime
 
 with open('./data.json') as f:
     d1 = json.load(f)
@@ -14,24 +15,13 @@ with open('./market.json', encoding='UTF-8') as f:
 
 items = {}
 
-for x in d2["Weapon"]:
-    name = list(x.keys())[0]
-    i = {list(x.keys())[0]: ["무기", x[name]['price'], list(x.keys())[0]]}
+for x, item in d2["Weapon"].items():
+    i = {x: ["무기", item['price'], x]}
     items.update(i)
 
-for x in d2["item"]:
-    i = {list(x.keys())[0] : ["가챠", 100, list(x.keys())[0]]}
+for x, item in d2["item"].items():
+    i = {x: ["가챠", item['price'], x]}
     items.update(i)
-
-for x in d2["Food"]:
-    i = {x[2] : ["food", x[1], x[0]]}
-    items.update(i)
-
-for x in d2["Cars"]:
-    i = {x[2] : ["cars", x[1], x[0]]}
-    items.update(i)
-
-#print(items)
 
 nest_asyncio.apply()
 
@@ -44,8 +34,8 @@ ecobag = cluster["eco"]["bag"]
 def gotcha():
     # weights = (50 / 17, 40 / 17, 35 / 17, 30 / 17, 25 / 17, 20 / 17, 15 / 17, 10 / 17, 9 / 17, 8 / 17, 7 / 17, 6 / 17, 5 / 17, 4 / 17, 3 / 17, 3 / 17, 1 / 17)
     weights = (80, 20, 10, 5, 25, 20, 15, 10, 9, 8, 7, 6, 5, 4, 3, 3, 1)
-    a = random.choices(d2["item"], weights=weights)
-    name = list(a[0].keys())[0]
+    a = random.choices(list(d2["item"]), weights=weights)
+    name = a[0]
 
     return name
 
@@ -66,7 +56,7 @@ class Shop(commands.Cog):
 
     async def open_account(self, id : int):
         if id is not None:
-            new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": []}
+            new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": [], "gm_time": datetime.datetime.now() - datetime.timedelta(days=1, hours=1)}
             # wallet = current money, bank = money in bank
             await ecomoney.insert_one(new_user)
 
@@ -122,16 +112,6 @@ class Shop(commands.Cog):
             value="가챠 상점 | 사용 `!상점 가챠템`",
             inline=False
         )
-        # embed.add_field(
-        #     name="Food",
-        #     value="Buy items related to Food | Use `!mkt food`",
-        #     inline=False
-        # )
-        # embed.add_field(
-        #     name="Cars",
-        #     value="Buy items related to Cars | Use `!mkt cars`",
-        #     inline=False
-        # )
         embed.set_footer(
         text=f"요청자 : {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
         )
@@ -148,11 +128,10 @@ class Shop(commands.Cog):
             title="무기 상점",
             color=0xFF0000,
         )
-        for x in d2["Weapon"]:
-            name = list(x.keys())[0]
+        for x, item in d2["Weapon"].items():
             embed.add_field(
-                name=x[0],
-                value=f"이름 {list(x.keys())[0]} | 가격: {x[name]['price']} ZEN",
+                name= x,
+                value=f"공격력: {item['att']} | 방어력: {item['def']} | 체력: {item['health']}\n가격: {item['price']} ZEN",
                 inline=False
             )
         embed.set_footer(
@@ -167,60 +146,17 @@ class Shop(commands.Cog):
         """ 가챠 상점 (ko: !가챠템)"""
         embed = discord.Embed(
             timestamp=ctx.message.created_at,
-            title="가챠 상점",
+            title="가챠템 목록",
             color=0xFF0000,
         )
-        for x in d2["item"]:
-            name = list(x.keys())[0]
+        for x, item in d2["item"].items():
             embed.add_field(
-                name=list(x.keys())[0],
-                value=f"Name {name} | Price: {x[name]['price']} ZEN",
+                name= x,
+                value=f"공격력: {item['att']} | 방어력: {item['def']} | 체력: {item['health']}\n가격: {item['price']} ZEN",
                 inline=False
             )
         embed.set_footer(
             text=f"요청자 : {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
-        )
-        await ctx.send(embed=embed)
-
-    @mkt.command(name="food")
-    @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
-    async def food(self,ctx):
-        """ Food Market"""
-        embed = discord.Embed(
-            timestamp=ctx.message.created_at,
-            title="Food Market",
-            color=0xFF0000,
-        )
-        for x in d2["Food"]:
-            embed.add_field(
-                name=x[0],
-                value=f"Name {x[2]} | Price: ${x[1]}",
-                inline=False
-            )
-        embed.set_footer(
-            text=f"Requested By: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
-        )
-        await ctx.send(embed=embed)
-
-    @mkt.command(name="cars")
-    @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
-    async def cars(self,ctx):
-        """ Cars Market"""
-        embed = discord.Embed(
-            timestamp=ctx.message.created_at,
-            title="Automobile Market",
-            color=0xFF0000,
-        )
-        for x in d2["Cars"]:
-            embed.add_field(
-                name=x[0],
-                value=f"Name {x[2]} | Price: ${x[1]}",
-                inline=False
-            )
-        embed.set_footer(
-            text=f"Requested By: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
         )
         await ctx.send(embed=embed)
 
@@ -261,7 +197,7 @@ class Shop(commands.Cog):
 
         fg = items.get(item)
 
-        if fg is None:
+        if fg is None or fg[0] != '무기':
             await ctx.send("취급하지 않는 물건입니다..")
             return
 
@@ -291,7 +227,7 @@ class Shop(commands.Cog):
     @commands.command(aliases=["s", "판다"])
     @cooldown(1, 2, BucketType.user)
     @is_channel(956377522549981216)
-    async def sell(self, ctx, item : str, amount : int = 1):
+    async def sell(self, ctx, item : str = None, amount : int = 1):
         """ 상점에 물건을 판매합니다. (ko: !판다) """
         if amount <= 0 or amount > 100:
             await ctx.send("최소 수량 1개, 최대 수량 100개 판매 가능합니다.")
@@ -324,13 +260,15 @@ class Shop(commands.Cog):
                     await ctx.send("수량을 다시 확인해주세요")
                     return
                 elif amount == init_amount:
-                    price = int(round(price * init_amount * 0.7,0))
+                    if name == '만만한 Hope_Candy의 막대사탕':
+                        price = int(round(price * init_amount * 0.1,0))
+                    else:
+                        price = int(round(price * init_amount * 0.7,0))
                     index = bag['bag'].index(x)
                     await self.remove_item(ctx.author.id, item, init_amount)
                     await self.update_bank(ctx.author.id, u_bal + price)
                     await ctx.send(f"{name} {amount}개를 {price} ZEN에 판매하였습니다.")
                     return
-
                 else:
                     final_amount = init_amount - amount
                     price =  int(round(price * amount * 0.7,0))
@@ -361,7 +299,7 @@ class Shop(commands.Cog):
         item = gotcha()
         fg = items.get(item)
 
-        if fg is None:
+        if fg is None or fg[0] != '가챠':
             await ctx.send("취급하지 않는 물건입니다..")
             return
         amount = 1
@@ -439,31 +377,36 @@ class Shop(commands.Cog):
     @cooldown(1, 2, BucketType.user)
     @is_channel(956377522549981216)
     async def infoitem(self, ctx, *, ss: str):
-        a = None
-        for i, x in enumerate(d2["item"]):
-            if ss in x:
-                a = x[ss]
-        for i, x in enumerate(d2["Weapon"]):
-            if ss in x:
-                a = x[ss]
-
-        if a is None:
-            await ctx.send("없는 템 입니다.")
+        """ 아이템 정보를 확인합니다. (ko: !템) """
+        if ss in items.keys():
+            iteminshop = items[ss]
         else:
-            stats = f'공격력: {a["att"]}\n방어력: {a["def"]}\nHP: {a["health"]}\n'
-            upProbability = a["강화확률"]
-            upPrice = a["강화비용"]
+            await ctx.send("없는 템 입니다.")
+            return
 
-            embed = discord.Embed(
-                title=f'{ss}',
-                color=discord.Color.gold()
-            )
+        if iteminshop[0] == '무기':
+            item = d2["Weapon"][ss]
+        elif iteminshop[0] == '가챠':
+            item = d2["item"][ss]
+        else:
+            await ctx.send("없는 템 입니다.")
+            return
 
-            embed.set_thumbnail(url=a["image"])
-            embed.add_field(name="Stats", value=stats, inline=True)
-            embed.add_field(name="강화확률", value=upProbability, inline=True)
-            embed.add_field(name="강화비용", value=upPrice, inline=True)
-            await ctx.send(embed=embed)
+        stats = f'공격력: {item["att"]}\n방어력: {item["def"]}\nHP: {item["health"]}\n'
+        upProbability = item["강화확률"]
+        upPrice = item["강화비용"]
+
+        embed = discord.Embed(
+            title=f'{ss}',
+            color=discord.Color.gold()
+        )
+
+        embed.set_thumbnail(url=item["image"])
+        embed.add_field(name="Stats", value=stats, inline=False)
+        embed.add_field(name="강화확률", value=upProbability, inline=True)
+        embed.add_field(name="강화비용", value=upPrice, inline=True)
+        await ctx.send(embed=embed)
+
     # leaderboard
     @commands.command(aliases=["lb"])
     @cooldown(1, 2, BucketType.user)
