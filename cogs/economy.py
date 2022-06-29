@@ -261,7 +261,7 @@ class Economy(commands.Cog):
     @cooldown(1, 120, BucketType.user)
     @is_channel(986902833871855626)
     async def rob(self, ctx, user: discord.Member = None):
-        """ 상대의 지갑에 있는 돈을 강탈 합니다. (ko : !강탈)"""
+        """ 상대의 봇짐에 있는 돈을 강탈 합니다. (ko : !강탈)"""
         if user is None or user.id == ctx.author.id:
             await ctx.send('자기자신을 강탈 할 순 없습니다.')
         else:
@@ -273,10 +273,10 @@ class Economy(commands.Cog):
                 mem_bank = member_bal["wallet"]
                 user_bank = user_bal["wallet"]
                 if mem_bank < 500:
-                    await ctx.send('자신의 지갑을 비운채 남을 강탈할 수 없습니다.(최소 500 ZEN)')
+                    await ctx.send('자신의 봇짐을 비운채 남을 강탈할 수 없습니다.(최소 500 ZEN)')
                 elif mem_bank >= 500:
                     if user_bank < 100:
-                        await ctx.send('상대의 지갑에 충분한 돈이 들어있지 않습니다.(최소 100 ZEN)')
+                        await ctx.send('상대의 봇짐에 충분한 돈이 들어있지 않습니다.(최소 100 ZEN)')
                     elif user_bank >= 100:
                         num = random.randint(1, 100)
                         f_mem = mem_bank + num
@@ -316,7 +316,7 @@ class Economy(commands.Cog):
     @cooldown(1, 2, BucketType.user)
     @is_channel(986902833871855626)
     async def giveaway(self, ctx, amount: int):
-        """ 지갑에 있는 ZEN을 랜덤하게 뿌립니다.(ko : !돈뿌리기)"""
+        """ 봇짐에 있는 ZEN을 랜덤하게 뿌립니다.(ko : !돈뿌리기)"""
         try:
             await self.update_user(ctx.author.id)
             member_bal = await ecomoney.find_one({"id": ctx.author.id})
@@ -451,7 +451,7 @@ class Economy(commands.Cog):
             user_bal = await ecomoney.find_one({"id": ctx.author.id})
 
             if amount > user_bal["wallet"]:
-                await ctx.send('지갑에 잔고가 부족합니다.')
+                await ctx.send('봇짐에 잔고가 부족합니다.')
             elif amount <= 0:
                 await ctx.send('0 ZEN 이상을 배팅해주세요.')
             # elif amount > 1000:
@@ -477,7 +477,7 @@ class Economy(commands.Cog):
             user_bal = await ecomoney.find_one({"id": ctx.author.id})
 
             if amount > user_bal["wallet"]:
-                await ctx.send('지갑에 잔고가 부족합니다.')
+                await ctx.send('봇짐에 잔고가 부족합니다.')
             elif amount <= 0:
                 await ctx.send('0 ZEN 이상을 배팅해주세요.')
             # elif amount > 1000:
@@ -522,7 +522,7 @@ class Economy(commands.Cog):
             user_bal = await ecomoney.find_one({"id": ctx.author.id})
 
             if amount > user_bal["wallet"]:
-                await ctx.send('지갑에 잔고가 부족합니다.')
+                await ctx.send('봇짐에 잔고가 부족합니다.')
             elif amount <= 0:
                 await ctx.send('0 ZEN 이상을 배팅해주세요.')
             # elif amount > 10000:
