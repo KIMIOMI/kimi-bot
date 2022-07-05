@@ -407,6 +407,40 @@ class Shop(commands.Cog):
         embed.add_field(name="강화비용", value=upPrice, inline=True)
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["up", "강화"])
+    @cooldown(1, 2, BucketType.user)
+    @is_channel(956377522549981216)
+    async def upgrade(self, ctx, *, ss: str):
+        """ 아이템 정보를 확인합니다. (ko: !템) """
+        if ss in items.keys():
+            iteminshop = items[ss]
+        else:
+            await ctx.send("존재하지 않는 템 입니다.")
+            return
+
+        if iteminshop[0] == '무기':
+            item = d2["Weapon"][ss]
+        elif iteminshop[0] == '가챠':
+            item = d2["item"][ss]
+        else:
+            await ctx.send("존재하지 않는 템 입니다.")
+            return
+
+        stats = f'공격력: {item["att"]}\n방어력: {item["def"]}\nHP: {item["health"]}\n'
+        upProbability = item["강화확률"]
+        upPrice = item["강화비용"]
+
+        embed = discord.Embed(
+            title=f'{ss}',
+            color=discord.Color.gold()
+        )
+
+        embed.set_thumbnail(url=item["image"])
+        embed.add_field(name="Stats", value=stats, inline=False)
+        embed.add_field(name="강화확률", value=upProbability, inline=True)
+        embed.add_field(name="강화비용", value=upPrice, inline=True)
+        await ctx.send(embed=embed)
+
     # leaderboard
     @commands.command(aliases=["lb"])
     @cooldown(1, 2, BucketType.user)
