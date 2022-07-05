@@ -412,19 +412,68 @@ class Shop(commands.Cog):
     @is_channel(956377522549981216)
     async def upgrade(self, ctx, *, ss: str):
         """ 아이템 정보를 확인합니다. (ko: !템) """
-        if ss in items.keys():
-            iteminshop = items[ss]
-        else:
-            await ctx.send("존재하지 않는 템 입니다.")
+        bal = await ecomoney.find_one({"id": ctx.author.id})
+        if bal is None:
+            await self.open_account(ctx.author.id)
+            bal = await ecomoney.find_one({"id": ctx.author.id})
+
+        bag = await ecobag.find_one({"id": ctx.author.id})
+        if bag is None:
+            await self.open_bag(ctx.author.id)
+            bag = await ecobag.find_one({"id": ctx.author.id})
+
+        fg = items.get(ss)
+
+        if fg is None:
+            await ctx.send("취급하지 않는 물건입니다.")
+            return
+        if fg[0] != '가챠':
+            await ctx.send("강화 할 수 없는 아이템입니다.")
             return
 
-        if iteminshop[0] == '무기':
-            item = d2["Weapon"][ss]
-        elif iteminshop[0] == '가챠':
-            item = d2["item"][ss]
-        else:
-            await ctx.send("존재하지 않는 템 입니다.")
-            return
+        item = d2["item"][ss]
+
+        price = item["강화비용"]
+        name = fg[2]
+        upProbability = item["강화확률"]
+
+        u_bal = bal["bank"]
+
+        for x in bag['bag']:
+            if x[0] == ss:
+                init_amount = x[1]
+                index = bag['bag'].index(x)
+
+                if x[2] is None:
+                    for i in range(1, init_amount):
+
+
+
+                upItem = {"1": }
+                await ecobag.update_one({"id": ctx.author.id}, {"$set": {f"bag.{index}.2": amount}})
+                if amount > init_amount:
+                    await ctx.send("수량을 다시 확인해주세요")
+                    return
+                elif amount == init_amount:
+                    if name == '만만한 Hope_Candy의 막대사탕':
+                        price = int(round(price * init_amount * 0.1, 0))
+                    else:
+                        price = int(round(price * init_amount * 0.7, 0))
+
+                    await self.remove_item(ctx.author.id, item, init_amount)
+                    await self.update_bank(ctx.author.id, u_bal + price)
+                    await ctx.send(f"{name} {amount}개를 {price} ZEN에 판매하였습니다.")
+                    return
+                else:
+                    final_amount = init_amount - amount
+                    price = int(round(price * amount * 0.7, 0))
+                    index = bag['bag'].index(x)
+                    await self.edit_item(ctx.author.id, index, final_amount)
+                    await self.update_bank(ctx.author.id, u_bal + price)
+                    await ctx.send(f"{name} {amount}개를 {price} ZEN에 판매하였습니다.")
+                    return
+
+        await ctx.send("없는 물건은 못 팝니다.")
 
         stats = f'공격력: {item["att"]}\n방어력: {item["def"]}\nHP: {item["health"]}\n'
         upProbability = item["강화확률"]
