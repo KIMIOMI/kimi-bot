@@ -7,6 +7,7 @@ import nest_asyncio
 import json
 import random
 import datetime
+import numpy as np
 
 with open('./data.json') as f:
     d1 = json.load(f)
@@ -329,14 +330,14 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["i", "가방"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(956377522549981216)
+    # @is_channel(956377522549981216)
     async def inventory(self, ctx, page : int = 1):
         """ 가방을 확인합니다. (ko: !가방)
         물건이 많으면 페이지 넘버를 입력해주세요
-        {1 : "0-9", 2 : "10-20", 3 : "20-30", 4 : "30-40", 5 : "40-50"} - 페이지, 아이템 수량
+        {1 : "0-9", 2 : "10-20", 3 : "20-30", 4 : "30-40", 5 : "40-50" ...} - 페이지, 아이템 수량
         """
-        if page > 5 or page < 1:
-            await ctx.send("페이지는 1에서 5까지 입니다.")
+        if page > 7 or page < 1:
+            await ctx.send("페이지는 1에서 최대 7까지 입니다.")
             return
         bal = await ecomoney.find_one({"id": ctx.author.id})
         if bal is None:
@@ -349,7 +350,7 @@ class Shop(commands.Cog):
             bag = await ecobag.find_one({"id": ctx.author.id})
 
         total = 0
-        page_dict = {1 : "0-9", 2 : "10-20", 3 : "20-30", 4 : "30-40", 5 : "40-50"}
+        page_dict = {1 : "0-9", 2 : "10-20", 3 : "20-30", 4 : "30-40", 5 : "40-50", 6 : "50-60", 7 : "60-70"}
         intial, final = page_dict[page].split('-')
         for x in bag['bag']:
             total += 1
@@ -375,43 +376,80 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["item", "템"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(956377522549981216)
-    async def infoitem(self, ctx, *, ss: str):
+    # @is_channel(956377522549981216)
+    async def infoitem(self, ctx, name: str, num:int = 1):
         """ 아이템 정보를 확인합니다. (ko: !템) """
-        if ss in items.keys():
-            iteminshop = items[ss]
+        bag = await ecobag.find_one({"id": ctx.author.id})
+        if bag is None:
+            await self.open_bag(ctx.author.id)
+            bag = await ecobag.find_one({"id": ctx.author.id})
+
+        if name in items.keys():
+            iteminshop = items[name]
         else:
-            await ctx.send("없는 템 입니다.")
+            await ctx.send("존재하지 않는 템 입니다.")
             return
 
         if iteminshop[0] == '무기':
-            item = d2["Weapon"][ss]
+            item = d2["Weapon"][name]
         elif iteminshop[0] == '가챠':
-            item = d2["item"][ss]
+            item = d2["item"][name]
         else:
-            await ctx.send("없는 템 입니다.")
+            await ctx.send("존재하지 않는 템 입니다.")
             return
 
-        stats = f'공격력: {item["att"]}\n방어력: {item["def"]}\nHP: {item["health"]}\n'
+        price = item["강화비용"]
         upProbability = item["강화확률"]
-        upPrice = item["강화비용"]
+        att = item["att"]
+        defense = item["def"]
+        health = item["health"]
+        id = ctx.author.id
 
-        embed = discord.Embed(
-            title=f'{ss}',
-            color=discord.Color.gold()
-        )
+        has_it = False
+        for x in bag['bag']:
+            if x[0] == name:
+                has_it = True
+                index = bag['bag'].index(x)
+                init_amount = x[1]
+                if num > init_amount:
+                    await ctx.send(f'가방에 소유 중인 {name}가 입력하신 #{num} 보다 적습니다.')
+                    return
+                if len(x) < 3:
+                    json_items = {}
+                    for i in range(0, init_amount):
+                        json_items['{}'.format(i + 1)] = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att, "def": defense,
+                                                          "health": health, "강화확률": upProbability, "강화비용": price}
+                    await ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2": json_items}})
+                    stats = f'공격력: {att}\n방어력: {defense}\n체력: {health}\n'
+                    upProbability = upProbability
+                    upPrice = price
+                    total_up = 0
+                    break
+                else:
+                    stats = f'공격력: {x[2][f"{num}"]["att"]}\n방어력: {x[2][f"{num}"]["def"]}\n체력: {x[2][f"{num}"]["health"]}\n'
+                    upProbability = x[2][f"{num}"]["강화확률"]
+                    upPrice = x[2][f"{num}"]["강화비용"]
+                    total_up = x[2][f"{num}"]["강화"]
+                    break
+        if has_it:
+            embed = discord.Embed(
+                title=f'{ctx.author.name}의 {name}#{num} ({total_up}강)',
+                color=discord.Color.gold()
+            )
 
-        embed.set_thumbnail(url=item["image"])
-        embed.add_field(name="Stats", value=stats, inline=False)
-        embed.add_field(name="강화확률", value=upProbability, inline=True)
-        embed.add_field(name="강화비용", value=upPrice, inline=True)
-        await ctx.send(embed=embed)
+            embed.set_thumbnail(url=item["image"])
+            embed.add_field(name="Stats", value=stats, inline=False)
+            embed.add_field(name="강화확률", value=upProbability, inline=True)
+            embed.add_field(name="강화비용", value=upPrice, inline=True)
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send('가방에 없는 아이템 입니다.')
 
     @commands.command(aliases=["up", "강화"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(956377522549981216)
-    async def upgrade(self, ctx, *, ss: str):
-        """ 아이템 정보를 확인합니다. (ko: !템) """
+    # @is_channel(956377522549981216)
+    async def upgrade(self, ctx, name: str, num: int = 1):
+        """ 아이템을 강화 합니다. (ko: !강화) """
         bal = await ecomoney.find_one({"id": ctx.author.id})
         if bal is None:
             await self.open_account(ctx.author.id)
@@ -422,73 +460,65 @@ class Shop(commands.Cog):
             await self.open_bag(ctx.author.id)
             bag = await ecobag.find_one({"id": ctx.author.id})
 
-        fg = items.get(ss)
-
-        if fg is None:
-            await ctx.send("취급하지 않는 물건입니다.")
-            return
-        if fg[0] != '가챠':
-            await ctx.send("강화 할 수 없는 아이템입니다.")
-            return
-
-        item = d2["item"][ss]
-
-        price = item["강화비용"]
-        name = fg[2]
-        upProbability = item["강화확률"]
-
         u_bal = bal["bank"]
 
+        if name in items.keys():
+            iteminshop = items[name]
+        else:
+            await ctx.send("존재하지 않는 템 입니다.")
+            return
+
+        if iteminshop[0] == '무기':
+            item = d2["Weapon"][name]
+        elif iteminshop[0] == '가챠':
+            item = d2["item"][name]
+        else:
+            await ctx.send("존재하지 않는 템 입니다.")
+            return
+
+        price = item["강화비용"]
+        if price > u_bal:
+            await ctx.send('은행에 잔고가 부족합니다.')
+            return
+
+        upProbability = item["강화확률"]
+        att = item["att"]
+        defense = item["def"]
+        health = item["health"]
+        id = ctx.author.id
+
         for x in bag['bag']:
-            if x[0] == ss:
+            if x[0] == name:
                 init_amount = x[1]
                 index = bag['bag'].index(x)
-
-                if x[2] is None:
-                    for i in range(1, init_amount):
-
-
-
-                upItem = {"1": }
-                await ecobag.update_one({"id": ctx.author.id}, {"$set": {f"bag.{index}.2": amount}})
-                if amount > init_amount:
-                    await ctx.send("수량을 다시 확인해주세요")
+                if num > init_amount:
+                    await ctx.send(f'가방에 소유 중인 {name}가 입력하신 #{num} 보다 적습니다.')
                     return
-                elif amount == init_amount:
-                    if name == '만만한 Hope_Candy의 막대사탕':
-                        price = int(round(price * init_amount * 0.1, 0))
-                    else:
-                        price = int(round(price * init_amount * 0.7, 0))
 
-                    await self.remove_item(ctx.author.id, item, init_amount)
-                    await self.update_bank(ctx.author.id, u_bal + price)
-                    await ctx.send(f"{name} {amount}개를 {price} ZEN에 판매하였습니다.")
+                if len(x) < 3:
+                    json_items = {}
+                    for i in range(0, init_amount):
+                        json_items['{}'.format(i + 1)] = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att, "def": defense,
+                                                          "health": health, "강화확률": upProbability, "강화비용": price}
+                    await ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2": json_items}})
+                    total_up = 0
+                else:
+                    total_up = x[2][f'{num}']['강화']
+
+
+                await self.update_bank(ctx.author.id, u_bal - price)
+                if np.random.binomial(1, upProbability / 100) == 1:
+                    await ecobag.update_one({"id": id}, {
+                        "$inc": {f"bag.{index}.2.{num}.강화": 1, f"bag.{index}.2.{num}.강화 성공": 1, f"bag.{index}.2.{num}.강화 시도": 1,
+                                 f"bag.{index}.2.{num}.att": 1, f"bag.{index}.2.{num}.def": 1, f"bag.{index}.2.{num}.health": 1}})
+                    await ctx.send(f'강화 성공! {ctx.author.mention}의 {name}#{num}이 {total_up+1}강이 되었습니다.')
                     return
                 else:
-                    final_amount = init_amount - amount
-                    price = int(round(price * amount * 0.7, 0))
-                    index = bag['bag'].index(x)
-                    await self.edit_item(ctx.author.id, index, final_amount)
-                    await self.update_bank(ctx.author.id, u_bal + price)
-                    await ctx.send(f"{name} {amount}개를 {price} ZEN에 판매하였습니다.")
+                    await ecobag.update_one({"id": id}, {
+                        "$inc": {f"bag.{index}.2.{num}.강화 시도": 1}})
+                    await ctx.send(f'강화 실패! {ctx.author.mention}의 {name}#{num}이 여전히 {total_up}강 입니다.')
                     return
-
-        await ctx.send("없는 물건은 못 팝니다.")
-
-        stats = f'공격력: {item["att"]}\n방어력: {item["def"]}\nHP: {item["health"]}\n'
-        upProbability = item["강화확률"]
-        upPrice = item["강화비용"]
-
-        embed = discord.Embed(
-            title=f'{ss}',
-            color=discord.Color.gold()
-        )
-
-        embed.set_thumbnail(url=item["image"])
-        embed.add_field(name="Stats", value=stats, inline=False)
-        embed.add_field(name="강화확률", value=upProbability, inline=True)
-        embed.add_field(name="강화비용", value=upPrice, inline=True)
-        await ctx.send(embed=embed)
+        await ctx.send('가방에 없는 아이템 입니다.')
 
     # leaderboard
     @commands.command(aliases=["lb"])

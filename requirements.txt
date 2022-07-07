@@ -10,3 +10,4 @@ discord[voice]
 requests
 pymongo
 Flask
+numpy

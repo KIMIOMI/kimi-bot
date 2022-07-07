@@ -1,8 +1,17 @@
-import datetime
-import random
-import json
+import asyncio
+
 from flask import Flask
 from flask import abort, request
+import motor.motor_asyncio
+import nest_asyncio
+import json
+import random
+import datetime
+import numpy as np
+from utils.twitter_api import twitter_util as tu
+from urllib.parse import urlparse
+import re
+
 
 WINRATE = 2
 LOSERATE = 0.5
@@ -161,20 +170,125 @@ def update_user(id: int):
                     pass
                 else:
                     a = lambda key: 100 if key == "bank" else (
-                        datetime.datetime.now() - datetime.timedelta(days=1, hours=1) if key == "gm_time" else 0)
+                        datetime.datetime.now() - datetime.timedelta(days=1, hours=1) if key == "gm_time" else (datetime.datetime.now() - datetime.timedelta(days=1, hours=1) if key == "tw_time" else 0))
 
     except Exception as e:
         print(e)
 
-def upgrade_item(ss: str):
-    
+
+async def upgrade_item(ss:str):
+    with open('./data.json') as f:
+        d1 = json.load(f)
+    with open('./market.json', encoding='UTF-8') as f:
+        d2 = json.load(f)
+    nest_asyncio.apply()
+
+    mongo_url = d1['mongo']
+
+    cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
+    ecomoney = cluster["eco"]["money"]
+    ecobag = cluster["eco"]["bag"]
+
+    id = 847032918747512872
+    bal = await ecomoney.find_one({"id": id})
+    bag = await ecobag.find_one({"id": id})
+
+    print(bal)
+    print(bag)
+
+    item = d2["Weapon"][ss]
+
+    price = item["강화비용"]
+    name = item.keys()
+    upProbability = item["강화확률"]
+    att = item["att"]
+    defense = item["def"]
+    health = item["health"]
+
+    u_bal = bal["bank"]
+
     for x in bag['bag']:
         if x[0] == ss:
             init_amount = x[1]
             index = bag['bag'].index(x)
 
-            if x[2] is None:
-                for i in range(1, init_amount):
+            if len(x) < 3:
+                print("x2 is none")
+                json_items = items
+                for i in range(0, init_amount):
+                    json_items['{}'.format(i+1)] = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att, "def": defense, "health": health}
+                print(json_items)
+                await ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2": json_items}})
+
+            if np.random.binomial(1, upProbability/100) == 1:
+                print('강화 성공')
+                await ecobag.update_one({"id":id}, {"$inc": {f"bag.{index}.2.1.강화": 1, f"bag.{index}.2.1.강화 성공": 1, f"bag.{index}.2.1.강화 시도": 1, f"bag.{index}.2.1.att": 1, f"bag.{index}.2.1.def": 1, f"bag.{index}.2.1.health": 1 }})
+            else:
+                print('강화 실패')
+                await ecobag.update_one({"id": id}, {"$inc": {f"bag.{index}.2.1.강화": 1, f"bag.{index}.2.1.강화 성공": 0, f"bag.{index}.2.1.강화 시도": 1}})
+
+
+def twitter_check(link):
+    with open('./hashTags.json', encoding='UTF-8') as f:
+        hashTags = json.load(f)["hashTags"]
+
+    link = urlparse(link)
+    username = link.path.split('/')[1]
+    tweet = tu()
+    headers = tweet.create_headers()
+
+    url = tweet.create_get_user_url(username)
+    json_response = tweet.connect_to_endpoint(url[0], headers, url[1])
+    user_id = json_response["data"]["id"]
+
+    url = tweet.create_user_timeline_url(user_id)
+    json_response = tweet.connect_to_endpoint(url[0], headers, url[1])
+    tweets = json_response["data"]
+
+    for tweet in tweets:
+        text = tweet["text"]
+        id = tweet["id"]
+        created_at = tweet["created_at"]
+        tweethashTags = re.findall(r"#(\w+)", text)
+        print(tweethashTags, created_at)
+        hashResult = True
+        for hashtag in hashTags:
+            if hashtag in tweethashTags:
+                hashResult &= True
+            else:
+                hashResult &= False
+        if hashResult:
+            return hashResult, created_at
+
+    return False , 0
+
+def time_test():
+    date = datetime.datetime.utcnow() - datetime.timedelta(days=1, hours=1)
+
+    # link = 'https://twitter.com/kimi3672/status/1544874169481183232'
+    link = 'h'
+    result, created_at = twitter_check(link)
+    created_at = datetime.datetime.strptime(created_at ,"%Y-%m-%dT%H:%M:%S.%fZ")
+
+    if (created_at.date() - date.date()).days < 1:
+        print("true")
+    else:
+        print("false")
+
+    print(date)
+    print(created_at)
+    print((created_at.date() - date.date()).days)
+
+
+# time_test()
+# asyncio.run(upgrade_item("죽도"))
+user_profile = {'skill': {'폭풍 가르기': {'att': '1', 'level': '1', 'type': 'fire'}}}
+ment = ''
+for skill_name, skill in user_profile['skill'].items():
+    print(skill_name)
+    print(skill)
+    ment += f"{skill_name} lv:{skill['level']}\n"
+print(ment)
 
 # with open('./market2.json', encoding='UTF-8') as f:
 #     d2 = json.load(f)

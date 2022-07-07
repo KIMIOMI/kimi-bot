@@ -8,11 +8,17 @@ import motor.motor_asyncio
 import nest_asyncio
 import json
 import random
+from urllib.parse import urlparse
+import re
+from utils.twitter_api import twitter_util as tu
 
 with open('./data.json') as f:
     d1 = json.load(f)
 with open('./market.json', encoding='UTF-8') as f:
     d2 = json.load(f)
+with open('./hashTags.json', encoding='UTF-8') as f:
+    hashTags = json.load(f)["hashTags"]
+
 
 land = d2["Land"]
 
@@ -50,19 +56,55 @@ def splitMoney(amount, n):
     return pieces
 
 
+def twitter_check(link):
+    try:
+        link = urlparse(link)
+        username = link.path.split('/')[1]
+        tweet = tu()
+        headers = tweet.create_headers()
+
+        url = tweet.create_get_user_url(username)
+        json_response = tweet.connect_to_endpoint(url[0], headers, url[1])
+        user_id = json_response["data"]["id"]
+
+        url = tweet.create_user_timeline_url(user_id)
+        json_response = tweet.connect_to_endpoint(url[0], headers, url[1])
+        tweets = json_response["data"]
+
+        for tweet in tweets:
+            text = tweet["text"]
+            id = tweet["id"]
+            created_at = tweet["created_at"]
+            tweethashTags = re.findall(r"#(\w+)", text)
+            hashResult = True
+            for hashtag in hashTags:
+                if hashtag in tweethashTags:
+                    hashResult &= True
+                else:
+                    hashResult &= False
+            if hashResult:
+                if len(text) > 20:
+                    return hashResult, created_at
+
+        return False, 0
+    except:
+        return False, 0
+
+
 class Economy(commands.Cog):
     """ Commands related to economy"""
 
     def __init__(self, bot):
         self.bot = bot
-        self.key = ["id", "wallet", "bank", "land", "wage", "inventory", "gm_time"]
+        self.key = ["id", "wallet", "bank", "land", "wage", "inventory", "gm_time", "tw_time"]
 
     @commands.Cog.listener()
     async def on_ready(self):
         print("Eco Cog Loaded Succesfully")
 
     async def open_account(self, id: int):
-        new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": [], "gm_time": datetime.datetime.now() - datetime.timedelta(days=1, hours=1)}
+        new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": [],
+                    "gm_time": datetime.datetime.utcnow() - datetime.timedelta(days=1, hours=1)}
         # wallet = current money, bank = money in bank
         await ecomoney.insert_one(new_user)
 
@@ -93,9 +135,13 @@ class Economy(commands.Cog):
                     if key in bal:
                         pass
                     else:
-                        a = lambda key: 100 if key == "bank" else (
-                            datetime.datetime.now() - datetime.timedelta(days=1, hours=1) if key == "gm_time" else 0)
-                        await ecomoney.update_one({"id": id}, {"$set": {key: a(key)}})
+                        if key == "bank":
+                            val = 100
+                        elif key == "gm_time" or key == "tw_time":
+                            val = datetime.datetime.utcnow() - datetime.timedelta(days=1, hours=1)
+                        else:
+                            val = 0
+                        await ecomoney.update_one({"id": id}, {"$set": {key: val}})
         except Exception as e:
             print(e)
 
@@ -130,14 +176,14 @@ class Economy(commands.Cog):
                 await ecoinfo.update_one(server, {
                     "$set": {"event_count": event_count, "message_counter": message_counter,
                              "event_owner": str(message.author),
-                             "event_amount": amount, "event_time": datetime.datetime.now(), "event": True}})
+                             "event_amount": amount, "event_time": datetime.datetime.utcnow(), "event": True}})
             else:
                 message_counter += 1
                 if event == True:
                     event_occurred_time = server["event_time"]
                     event_owner = server["event_owner"]
                     event_amount = server["event_amount"]
-                    time_now = datetime.datetime.now()
+                    time_now = datetime.datetime.utcnow()
                     if (time_now - event_occurred_time).total_seconds() < 10:
                         if str(message.author) == str(event_owner):
                             if str(message.content) == "줍기":
@@ -158,7 +204,7 @@ class Economy(commands.Cog):
 
     @commands.command(aliases=["bal", "자산"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    # @is_channel(986902833871855626)
     async def balance(self, ctx, user: discord.Member = None):
         """ 당신의 자산을 확인합니다.(ko: !자산) """
         if user is None:
@@ -234,7 +280,7 @@ class Economy(commands.Cog):
     # 출석체크
     @commands.command(aliases=["출첵"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(986902833871855626)
+    # @is_channel(986902833871855626)
     async def gm(self, ctx):
         """ 출석체크를 통해 ZEN을 지급 받습니다. (ko : !출첵)"""
         try:
@@ -242,16 +288,48 @@ class Economy(commands.Cog):
             eco = await ecomoney.find_one({"id": ctx.author.id})
             gm_time = eco['gm_time']
             if gm_time is not None:
-                if (datetime.datetime.now() - gm_time).total_seconds() < 86400:
-                    await ctx.send("지난 출첵 부터 24시간이 지나야 다시 출첵 가능합니다.")
+                if (datetime.datetime.utcnow().date() - gm_time.date()).days < 1:
+                    await ctx.send("오늘 출첵은 완료! 내일 다시 출첵해주세요.")
                     return
 
             amount = 50
             for role in ctx.author.roles:
-                if role.id == 950255167264141412 or role.id == 950255426740568105 or role.id == 950255295786016768:
+                if role.id == 950253891491102770:
                     amount = 100
             await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"bank": +amount}})
-            await ecomoney.update_one({"id": ctx.author.id}, {"$set": {"gm_time": datetime.datetime.now()}})
+            await ecomoney.update_one({"id": ctx.author.id}, {"$set": {"gm_time": datetime.datetime.utcnow()}})
+            await ctx.send(f'{ctx.author.mention} 에게 {amount} ZEN을 지급했습니다.')
+        except Exception as e:
+            print(e)
+            await ctx.send('취..익 취이..ㄱ')
+
+    @commands.command(aliases=["트윗", "tw"])
+    @cooldown(1, 2, BucketType.user)
+    # @is_channel(986902833871855626)
+    async def tweet(self, ctx, link:str):
+        """ 매일 트윗을 올려 ZEN을 지급 받습니다. (ko : !트윗)"""
+        try:
+            await self.update_user(ctx.author.id)
+            eco = await ecomoney.find_one({"id": ctx.author.id})
+            tw_time = eco['tw_time']
+            result, createdAt = twitter_check(link)
+            if result is False:
+                await ctx.send("트윗 글자수, 해시태그, 혹은 링크를 다시 확인해주세요")
+                return
+
+            createdAt = datetime.datetime.strptime(createdAt, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+            if tw_time is not None:
+                if (createdAt - tw_time).total_seconds() < 10:
+                    await ctx.send("2시간이 지난 새로운 트윗이 없습니다. 새로운 트윗이 있다면 글자 수, 해시태그를 다시 확인해 주세요")
+                    return
+
+            amount = 50
+            for role in ctx.author.roles:
+                if role.id == 950253891491102770:
+                    amount = 100
+            await ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"bank": +amount}})
+            await ecomoney.update_one({"id": ctx.author.id}, {"$set": {"tw_time": createdAt}})
             await ctx.send(f'{ctx.author.mention} 에게 {amount} ZEN을 지급했습니다.')
         except Exception as e:
             print(e)

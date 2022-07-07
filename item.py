@@ -51,7 +51,7 @@ class Scroll:
     def __str__(self):
         return self.name
 
-p = 0.1
+p = 0.5
 scroll = Scroll('방패 방어력 {}% 주문서'.format(str(p*100)), p, 20, 10, 'shield')
 
 print('*강화 주문서 :',scroll)
