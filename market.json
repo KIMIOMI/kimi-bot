@@ -74,15 +74,6 @@
         "강화확률": 25,
         "강화비용": 25
       },
-      "반짝거리는 루팡의 안경": {
-        "price": 100,
-        "image": "https://cdn-icons-png.flaticon.com/512/895/895971.png",
-        "att": 15,
-        "def": 0,
-        "health": 80,
-        "강화확률": 25,
-        "강화비용": 25
-      },
       "굳건한 세일러의 바이블": {
         "price": 100,
         "image": "https://cdn-icons-png.flaticon.com/512/3145/3145438.png",
@@ -107,15 +98,6 @@
         "att": 25,
         "def": 18,
         "health": 60,
-        "강화확률": 15,
-        "강화비용": 35
-      },
-      "힘법사 간랄프의 지팡이": {
-        "price": 100,
-        "image": "https://cdn-icons-png.flaticon.com/512/6271/6271434.png",
-        "att": 45,
-        "def": 5,
-        "health": 30,
         "강화확률": 15,
         "강화비용": 35
       },

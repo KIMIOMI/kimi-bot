@@ -2,8 +2,10 @@ import motor.motor_asyncio
 import nest_asyncio
 import json
 import datetime
+from utils.market import Market
 
-class db():
+
+class Db():
     def __init__(self):
         with open('./data.json') as f:
             d1 = json.load(f)
@@ -11,11 +13,12 @@ class db():
         nest_asyncio.apply()
         mongo_url = d1['mongo']
         cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
+        self.market = Market()
         self.ecomoney = cluster["eco"]["money"]
         self.ecobag = cluster["eco"]["bag"]
         self.ecouser = cluster["eco"]["user"]
         self.key = ["id", "wallet", "bank", "land", "wage", "inventory", "gm_time", "tw_time"]
-        self.userkey = ["id", "level", "exp", "armed", "att", "def", "health", "skill", "title"]
+        self.userkey = ["id", "level", "exp", "current_hp", "armed", "att", "def", "health", "skill", "title"]
 
     async def open_account(self, id: int):
         new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": [],
@@ -30,7 +33,7 @@ class db():
 
     async def open_user(self, id : int):
         if id is not None:
-            newuser = {"id": id, "level": 1, "exp": 0, "armed":{"weapon": "", "armor": "", "shoes": ""},"att": 1, "def": 1, "health": 10, "skill": [], "title": []} ## 추가
+            newuser = {"id": id, "level": 1, "exp": 0, "current_hp": 10, "armed":{"weapon": "", "armor": "", "shoes": ""},"att": 1, "def": 1, "health": 10, "skill": [], "title": []} ## 추가
             await self.ecouser.insert_one(newuser)
 
     async def update_wallet(self, id: int, wallet: int):
@@ -49,6 +52,15 @@ class db():
         if id is not None:
             await self.ecomoney.update_one({"id": id}, {"$inc": {"wallet": amount}})
 
+    async def arm_weapon(self, id: int, name, num, up, att, defense, hp):
+        if id is not None:
+            await self.ecouser.update_one({"id": id}, {"$inc": {"att": att, "def": defense, "health": hp}})
+            await self.ecouser.update_one({"id": id}, {"$set": {"armed.weapon": f'{name}#{num}({up}강)'}})
+
+    async def update_user_current_hp(self, id: int, hp):
+        if id is not None:
+            await self.ecouser.update_one({"id": id}, {"$set": {"current_hp": hp}})
+
     async def update_user(self, id: int):
         try:
             if id is not None:
@@ -56,6 +68,7 @@ class db():
                 if bal is None:
                     await self.open_account(id)
                     bal = await self.ecomoney.find_one({"id": id})
+                is_changed = False
                 for key in self.key:
                     if key in bal:
                         pass
@@ -67,6 +80,25 @@ class db():
                         else:
                             val = 0
                         await self.ecomoney.update_one({"id": id}, {"$set": {key: val}})
+                        is_changed = True
+                if is_changed:
+                    bal = await self.ecomoney.find_one({"id": id})
+                return bal
+            else:
+                return None
+        except Exception as e:
+            print(e)
+
+    async def update_bag(self, id: int):
+        try:
+            if id is not None:
+                bag = await self.ecobag.find_one({"id": id})
+                if bag is None:
+                    await self.open_bag(id)
+                    bag = await self.ecobag.find_one({"id": id})
+                return bag
+            else:
+                return None
         except Exception as e:
             print(e)
 
@@ -91,6 +123,8 @@ class db():
                             val = 10
                         elif key == "skill" or key == "title":
                             val = {}
+                        elif key == "current_hp":
+                            val = 10
                         else:
                             val = 0
                         await self.ecouser.update_one({"id": id}, {"$set": {key: val}})
@@ -100,3 +134,39 @@ class db():
                 return None
         except Exception as e:
             print(e)
+
+    async def update_upgrade_item(self, id: int, name: str):
+        bag = await self.update_bag(id)
+        price, upPrice, upProbability, att, defense, health, image, _bool = self.market.item(name)
+        if _bool is False:
+            return None, 0
+
+        for x in bag['bag']:
+            if x[0] == name:
+                init_amount = x[1]
+                index = bag['bag'].index(x)
+                if len(x) < 3:
+                    json_items = {}
+                    for i in range(0, init_amount):
+                        json_items['{}'.format(i + 1)] = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att,
+                                                          "def": defense,
+                                                          "health": health, "강화확률": upProbability, "강화비용": upPrice}
+                    await self.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2": json_items}})
+                return await self.ecobag.find_one({"id": id}, {"_id": 0, f"bag": {"$slice": [index, index + 1]}}), index
+        return None, 0
+
+    # function to add item in ecobag
+    async def add_item(self, id: int, item: str, amount: int):
+        if id is not None:
+            await self.ecobag.update_one({"id": id}, {"$push": {"bag": [item, amount]}})
+
+    # function to edit amount of item in ecobag
+    async def edit_item(self, id: int, index: int, amount: int, num: int):
+        if id is not None:
+            await self.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.1": amount},
+                                                      "$unset": {f"bag.{index}.2.{num}":""}})
+
+    # function to remove item from ecobag
+    async def remove_item(self, id: int, index: int):
+        if id is not None:
+            await self.ecobag.update_one({"id": id}, {"$pop": {f"bag": {"$slice": [index, index + 1]}}})

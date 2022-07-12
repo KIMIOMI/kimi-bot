@@ -11,6 +11,8 @@ import numpy as np
 from utils.twitter_api import twitter_util as tu
 from urllib.parse import urlparse
 import re
+import matplotlib.pyplot as plt
+import math
 
 
 WINRATE = 2
@@ -279,16 +281,55 @@ def time_test():
     print(created_at)
     print((created_at.date() - date.date()).days)
 
+def leveling():
+    exp_disgea =[]
+    exp_poke = []
+    exp_ori = []
+    exp_free = []
+    t = np.arange(0., 5., 0.2)
+    for level in range(1, 10000):
+        exp_disgea.append(round(0.04 * (level ** 3) + 0.8 * (level ** 2) + 2 * level))
+        exp_poke.append(math.pow(level,3))
+        exp_ori.append(round((4 * (level ** 3)) / 5))
+        exp_free.append(math.floor(1000 * (level ** 3)))
+    plt.plot(exp_disgea, 'r--')
+    plt.show()
 
+
+def hunting(monster, user):
+    m_hp = monster["health"]
+    m_att = monster["att"]
+    m_def = monster["def"]
+    u_hp = user["health"]
+    u_att = user["att"]
+    u_def = user["def"]
+    round = 0
+    while (m_hp * u_hp) > 0:
+        m_hp -= (u_att - m_def) if (u_att - m_def) > 0 else 1
+        u_hp -= (m_att - u_def) if (m_att - u_def) > 0 else 1
+        print("{} 라운드 m_hp = {} u_hp = {}".format(round, m_hp, u_hp))
+        round += 1
+
+    if m_hp < 0:
+        print('유저 윈')
+    elif u_hp < 0:
+        print('유저 패')
+
+def weapon_split(name:str):
+    a= name.split('#')
+    weapon_name = a[0]
+    b= a[1].split('(')
+    num = b[0]
+    print(weapon_name, num)
+
+
+a = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']
+a = list(map(int, a))
+print(max(a))
+# weapon_split('죽도#3(0강)')
 # time_test()
 # asyncio.run(upgrade_item("죽도"))
-user_profile = {'skill': {'폭풍 가르기': {'att': '1', 'level': '1', 'type': 'fire'}}}
-ment = ''
-for skill_name, skill in user_profile['skill'].items():
-    print(skill_name)
-    print(skill)
-    ment += f"{skill_name} lv:{skill['level']}\n"
-print(ment)
+
 
 # with open('./market2.json', encoding='UTF-8') as f:
 #     d2 = json.load(f)
