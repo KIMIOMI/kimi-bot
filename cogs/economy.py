@@ -48,7 +48,7 @@ class Economy(commands.Cog):
             await ctx.send(f"경매진행 {i + 1}분 경과! {self.auction_str}")
         if self.bid_user is not "":
             user_bal = await db.update_user(self.bid_user.id)
-            if user_bal < self.bid_money:
+            if user_bal["bank"] < self.bid_money:
                 await ctx.send(f"{self.bid_user.mention}님 계좌에 현재 낙찰에 지불할 금액이 없습니다!")
                 self.bid_money = 0
                 self.bid_user = ""
@@ -591,7 +591,7 @@ class Economy(commands.Cog):
     async def bid(self, ctx, bid: int):
         """ 경매에 입찰합니다. (ko : !입찰)"""
         try:
-            await self.update_user(ctx.author.id)
+            await db.update_user(ctx.author.id)
             user_bal = await db.ecomoney.find_one({"id": ctx.author.id})
             if self.bid_money == 0:
                 await ctx.send("현재 진행중인 경매가 없습니다.")
@@ -601,7 +601,7 @@ class Economy(commands.Cog):
                 return
 
             if user_bal["bank"] < bid:
-                await ctx.send(f"{ctx.author.mention}님 은행에 잔고가 부족합니다.")
+                await ctx.send(f"{ctx.author.mention}님 은행 계좌에 잔고가 부족합니다.")
                 return
 
             self.bid_user = ctx.author
