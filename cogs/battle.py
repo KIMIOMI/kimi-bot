@@ -81,9 +81,9 @@ class Battle(commands.Cog):
             if user is None:
                 user = ctx.author
             user_profile = await mydb.update_battle_user(user.id)
-            eka_role = discord.utils.find(lambda r: r.name == 'Happy', ctx.message.guild.roles)
-            mudrA_role = discord.utils.find(lambda r: r.name == 'Sad', ctx.message.guild.roles)
-            gItA_role = discord.utils.find(lambda r: r.name == 'Cool', ctx.message.guild.roles)
+            eka_role = discord.utils.find(lambda r: r.id == 950255167264141412, ctx.message.guild.roles)
+            mudrA_role = discord.utils.find(lambda r: r.id == 950255295786016768, ctx.message.guild.roles)
+            gItA_role = discord.utils.find(lambda r: r.id == 950255426740568105, ctx.message.guild.roles)
 
             nation =''
             if eka_role in user.roles:

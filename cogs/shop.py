@@ -1,21 +1,23 @@
 import random
-
 import discord
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
 import datetime
-import numpy as np
 from utils.dbctrl import Db
 
 db = Db()
 
+
 def is_channel(channelId):
     def predicate(ctx):
         return ctx.message.channel.id == channelId
+
     return commands.check(predicate)
+
 
 class Shop(commands.Cog):
     """ Commands related to market"""
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -25,8 +27,8 @@ class Shop(commands.Cog):
 
     @commands.group(aliases=["상점"], invoke_without_command=True)
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(956377522549981216)
-    async def mkt(self,ctx):
+    @is_channel(956377522549981216)
+    async def mkt(self, ctx):
         """ 상점 (ko: !상점)"""
         embed = discord.Embed(
             timestamp=ctx.message.created_at,
@@ -44,15 +46,15 @@ class Shop(commands.Cog):
             inline=False
         )
         embed.set_footer(
-        text=f"요청자 : {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
+            text=f"요청자 : {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
         )
 
         await ctx.send(embed=embed)
 
     @mkt.command(name="wp", aliases=["무기"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(956377522549981216)
-    async def weapon(self,ctx):
+    @is_channel(956377522549981216)
+    async def weapon(self, ctx):
         """ 무기 상점 """
         embed = discord.Embed(
             timestamp=ctx.message.created_at,
@@ -61,7 +63,7 @@ class Shop(commands.Cog):
         )
         for x, item in db.market.market_data["Weapon"].items():
             embed.add_field(
-                name= x,
+                name=x,
                 value=f"공격력: {item['att']} | 방어력: {item['def']} | 체력: {item['health']}\n가격: {item['price']} ZEN",
                 inline=False
             )
@@ -72,8 +74,8 @@ class Shop(commands.Cog):
 
     @mkt.command(name="gatcha", aliases=["가챠템"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(956377522549981216)
-    async def gatcha_(self,ctx):
+    @is_channel(956377522549981216)
+    async def gatcha_(self, ctx):
         """ 가챠 상점 (ko: !가챠템)"""
         embed = discord.Embed(
             timestamp=ctx.message.created_at,
@@ -82,7 +84,7 @@ class Shop(commands.Cog):
         )
         for x, item in db.market.market_data["item"].items():
             embed.add_field(
-                name= x,
+                name=x,
                 value=f"공격력: {item['att']} | 방어력: {item['def']} | 체력: {item['health']}\n가격: {item['price']} ZEN",
                 inline=False
             )
@@ -93,8 +95,8 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["b", "산다"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(956377522549981216)
-    async def buy(self, ctx, name : str, amount : int = 1):
+    @is_channel(956377522549981216)
+    async def buy(self, ctx, name: str, amount: int = 1):
         """ 상점에서 물건을 구입한다. (ko: !산다)"""
         id = ctx.author.id
         if amount <= 0 or amount > 100:
@@ -141,7 +143,7 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["s", "판다"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(956377522549981216)
+    @is_channel(956377522549981216)
     async def sell(self, ctx, name: str, amount: int = 1):
         """ 상점에 물건을 판매합니다. (ko: !판다) """
         user = ctx.author
@@ -155,7 +157,7 @@ class Shop(commands.Cog):
         bag = await db.update_bag(user.id)
         if bal is None or bag is None:
             await ctx.send("문제 발생! 관리자에게 문의 하세요")
-        
+
         fg = db.market.items.get(name)
 
         if fg is None:
@@ -191,7 +193,7 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["가챠"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(956377522549981216)
+    @is_channel(956377522549981216)
     async def gatcha(self, ctx):
         """ 가챠 (ko: !가챠)"""
 
@@ -231,8 +233,8 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["i", "가방"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(956377522549981216)
-    async def inventory(self, ctx, page : int = 1):
+    @is_channel(956377522549981216)
+    async def inventory(self, ctx, page: int = 1):
         """ 가방을 확인합니다. (ko: !가방)
         물건이 많으면 페이지 넘버를 입력해주세요
         {1 : "0-9", 2 : "10-20", 3 : "20-30", 4 : "30-40", 5 : "40-50" ...} - 페이지, 아이템 수량
@@ -246,21 +248,21 @@ class Shop(commands.Cog):
             await ctx.send("문제 발생! 관리자에게 문의 하세요")
 
         total = 0
-        page_dict = {1 : "0-9", 2 : "10-20", 3 : "20-30", 4 : "30-40", 5 : "40-50", 6 : "50-60", 7 : "60-70"}
+        page_dict = {1: "0-9", 2: "10-20", 3: "20-30", 4: "30-40", 5: "40-50", 6: "50-60", 7: "60-70"}
         intial, final = page_dict[page].split('-')
         for x in bag['bag']:
             total += 1
         if total == 0:
             await ctx.send("가방이 비어있습니다.")
             return
-        
-        page_items = bag['bag'][int(intial):int(final)+1]
+
+        page_items = bag['bag'][int(intial):int(final) + 1]
 
         embed = discord.Embed(
             title=f"{ctx.author.name}의 가방",
             description=f"페이지 {page} | 아이템 개수: {total}",
             color=0xFF0000
-            )
+        )
         for x in page_items:
             fg = db.market.items.get(x[0])
             embed.add_field(name=f"{fg[2]}({x[2]['강화']}강)", value=f"{x[1]}", inline=False)
@@ -272,7 +274,7 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["item", "템"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(956377522549981216)
+    @is_channel(956377522549981216)
     async def infoitem(self, ctx, name: str):
         """ 아이템 정보를 확인합니다. (ko: !템) """
         bag = await db.update_bag(ctx.author.id)
@@ -303,7 +305,7 @@ class Shop(commands.Cog):
 
     @commands.command(aliases=["up", "강화"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(956377522549981216)
+    @is_channel(956377522549981216)
     async def upgrade(self, ctx, name: str):
         """ 아이템을 강화 합니다. (ko: !강화) """
         user = ctx.author
@@ -321,7 +323,7 @@ class Shop(commands.Cog):
 
         u_bal = bal["bank"]
 
-        _, upPrice, upProbability, _, _, _, _,  _bool = db.market.item(name)
+        _, upPrice, upProbability, _, _, _, _, _bool = db.market.item(name)
         if _bool is False:
             await ctx.send("없는 아이템 입니다.")
             return
@@ -342,9 +344,10 @@ class Shop(commands.Cog):
             if random.random() <= (upProbability / 100):
                 await db.ecobag.update_one({"id": user.id}, {
                     "$inc": {f"bag.{index}.2.강화": 1, f"bag.{index}.2.강화 성공": 1, f"bag.{index}.2.강화 시도": 1},
-                    "$set": {f"bag.{index}.2.att": att, f"bag.{index}.2.def": defense, f"bag.{index}.2.health": health}})
-                
-                await ctx.send(f'강화 성공! {user.mention}의 {name}이 {total_up+1}강이 되었습니다.')
+                    "$set": {f"bag.{index}.2.att": att, f"bag.{index}.2.def": defense,
+                             f"bag.{index}.2.health": health}})
+
+                await ctx.send(f'강화 성공! {user.mention}의 {name}이 {total_up + 1}강이 되었습니다.')
                 return
             else:
                 await db.ecobag.update_one({"id": user.id}, {
@@ -368,7 +371,7 @@ class Shop(commands.Cog):
             title=f"{ctx.guild.name}'s Leaderboard",
             description=f"\u200b",
             color=0xFF0000
-            )
+        )
 
         async for x in rankings:
             try:
@@ -383,12 +386,11 @@ class Shop(commands.Cog):
             if i == 11:
                 break
 
-
         embed.set_footer(
             text=f"Requested By: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
         )
         await ctx.send(embed=embed)
-        
+
 
 def setup(bot):
     bot.add_cog(Shop(bot))
