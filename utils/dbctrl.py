@@ -8,15 +8,16 @@ from utils.market import Market
 class Db():
     def __init__(self):
         with open('./data.json') as f:
-            d1 = json.load(f)
+            mongo_data = json.load(f)
 
         nest_asyncio.apply()
-        mongo_url = d1['mongo']
+        mongo_url = mongo_data['mongo']
         cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
         self.market = Market()
         self.ecomoney = cluster["eco"]["money"]
         self.ecobag = cluster["eco"]["bag"]
         self.ecouser = cluster["eco"]["user"]
+        self.ecoinfo = cluster["eco"]["info"]
         self.key = ["id", "wallet", "bank", "land", "wage", "inventory", "gm_time", "tw_time"]
         self.userkey = ["id", "level", "exp", "current_hp", "armed", "att", "def", "health", "skill", "title"]
 
@@ -52,12 +53,17 @@ class Db():
         if id is not None:
             await self.ecomoney.update_one({"id": id}, {"$inc": {"wallet": amount}})
 
-    async def arm_weapon(self, id: int, name, num, up, att, defense, hp):
+    async def arm_weapon(self, id: int, name, up, att, defense, hp):
         if id is not None:
             await self.ecouser.update_one({"id": id}, {"$inc": {"att": att, "def": defense, "health": hp}})
-            await self.ecouser.update_one({"id": id}, {"$set": {"armed.weapon": f'{name}#{num}({up}강)'}})
+            await self.ecouser.update_one({"id": id}, {"$set": {"armed.weapon": f'{name}({up}강)'}})
 
-    async def update_user_current_hp(self, id: int, hp):
+    async def disarm_weapon(self, id: int, att, defense, hp):
+        if id is not None:
+            await self.ecouser.update_one({"id": id}, {"$inc": {"att": att, "def": defense, "health": hp}})
+            await self.ecouser.update_one({"id": id}, {"$set": {"armed.weapon": ""}})
+
+    async def update_user_current_hp(self, id: int, hp: int):
         if id is not None:
             await self.ecouser.update_one({"id": id}, {"$set": {"current_hp": hp}})
 
@@ -143,30 +149,31 @@ class Db():
 
         for x in bag['bag']:
             if x[0] == name:
-                init_amount = x[1]
                 index = bag['bag'].index(x)
                 if len(x) < 3:
-                    json_items = {}
-                    for i in range(0, init_amount):
-                        json_items['{}'.format(i + 1)] = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att,
-                                                          "def": defense,
-                                                          "health": health, "강화확률": upProbability, "강화비용": upPrice}
+                    json_items = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att,
+                                  "def": defense, "health": health, "강화확률": upProbability,
+                                  "강화비용": upPrice}
                     await self.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2": json_items}})
-                return await self.ecobag.find_one({"id": id}, {"_id": 0, f"bag": {"$slice": [index, index + 1]}}), index
+                return await self.ecobag.find_one({"id": id}, {"_id": 0, f"bag": {"$slice": [index, 1]}}), index
         return None, 0
 
     # function to add item in ecobag
     async def add_item(self, id: int, item: str, amount: int):
         if id is not None:
-            await self.ecobag.update_one({"id": id}, {"$push": {"bag": [item, amount]}})
+            price, upPrice, upProbability, att, defense, health, image, _bool = self.market.item(item)
+            if _bool is not False:
+                item_status = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att,
+                               "def": defense, "health": health, "강화확률": upProbability,
+                               "강화비용": upPrice}
+                await self.ecobag.update_one({"id": id}, {"$push": {"bag": [item, amount, item_status]}})
 
     # function to edit amount of item in ecobag
-    async def edit_item(self, id: int, index: int, amount: int, num: int):
+    async def edit_item(self, id: int, index: int, amount: int):
         if id is not None:
-            await self.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.1": amount},
-                                                      "$unset": {f"bag.{index}.2.{num}":""}})
+            await self.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.1": amount}})
 
     # function to remove item from ecobag
-    async def remove_item(self, id: int, index: int):
+    async def remove_item(self, id: int, name: str):
         if id is not None:
-            await self.ecobag.update_one({"id": id}, {"$pop": {f"bag": {"$slice": [index, index + 1]}}})
+            await self.ecobag.update_one({"id": id}, {"$pull": {"bag": {"$in": [name]}}})

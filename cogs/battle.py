@@ -14,7 +14,7 @@ def is_channel(channelId):
     return commands.check(predicate)
 
 
-async def add_exp(id : int, level : int, exp_now: int, exp : int):
+async def add_exp(id : int, level : int, exp_now: int, exp: int, hp: int):
         exp_total = exp_now + exp
         next_exp = round(0.04 * (level ** 3) + 0.8 * (level ** 2) + 2 * level)
         ## level up
@@ -22,6 +22,7 @@ async def add_exp(id : int, level : int, exp_now: int, exp : int):
             exp_now = exp_total - next_exp
             await mydb.ecouser.update_one({"id": id}, {"$inc": {"level": 1, "att": 2, "def": 2, "health": 20}})
             await mydb.ecouser.update_one({"id": id}, {"$set": {"exp": 0}})
+            await mydb.update_user_current_hp(id, hp + 20)
             return True
         else:
             await mydb.ecouser.update_one({"id": id}, {"$set": {"exp": exp_total}})
@@ -39,6 +40,7 @@ async def hunting(id: int, monster, user):
     u_def = user["def"]
     u_level = user["level"]
     u_exp = user["exp"]
+    u_total_hp = user["health"]
     round_ = 0
     if u_hp <= 0:
         return False, False, 0, 0
@@ -51,7 +53,7 @@ async def hunting(id: int, monster, user):
 
     if m_hp <= 0:
         await mydb.update_user_current_hp(id, u_hp)
-        if await add_exp(id, u_level, u_exp, m_exp):
+        if await add_exp(id, u_level, u_exp, m_exp, u_total_hp):
             return True, True, m_exp, u_hp
         else:
             return True, False, m_exp, u_hp
@@ -72,7 +74,7 @@ class Battle(commands.Cog):
 
     @commands.command(aliases=["프로필"])
     @cooldown(1, 2, BucketType.user)
-    #@is_channel(channel_id)
+    @is_channel(996612272325660742)
     async def profile(self, ctx, user: discord.Member = None):
         """ 유저의 스탯을 확인합니다.(ko: !프로필) """
         try:
@@ -126,15 +128,12 @@ class Battle(commands.Cog):
 
     @commands.command(aliases=["사냥"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(channel_id)
+    @is_channel(996612272325660742)
     async def hunt(self, ctx):
         """ 사냥을 시작합니다. (ko: !사냥) """
         try:
             user = ctx.author
             user_profile = await mydb.update_battle_user(user.id)
-
-            print(user_profile)
-
             monster = {'health': 50, 'att': 1, 'def': 1, 'exp': 10, 'reward': 0}
             hunting_result, level_up, gain_exp, u_hp = await hunting(user.id, monster, user_profile)
             if hunting_result:
@@ -151,8 +150,8 @@ class Battle(commands.Cog):
 
     @commands.command(aliases=["착용"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(channel_id)
-    async def arm(self, ctx, name: str, num: int):
+    @is_channel(996612272325660742)
+    async def arm(self, ctx, name: str = None):
         """ 무기를 착용합니다. (ko: !착용) """
         try:
             user = ctx.author
@@ -162,33 +161,30 @@ class Battle(commands.Cog):
             if armed_weapon == '':
                 att, defense, hp = 0, 0, 0
             else:
-                armed_weapon_name, armed_weapon_num = mydb.market.armed_weapon_name_split(armed_weapon)
+                armed_weapon_name = mydb.market.armed_weapon_name_split(armed_weapon)
                 armed_item, _ = await mydb.update_upgrade_item(user.id, armed_weapon_name)
                 if armed_item is None:
                     await ctx.send("에러 발생 관리자에게 문의해 주세요! 착용무기 에러")
                     return
                 armed_item = armed_item['bag'][0]
-                att = -armed_item[2][f"{armed_weapon_num}"]["att"]
-                defense = -armed_item[2][f"{armed_weapon_num}"]["def"]
-                hp = -armed_item[2][f"{armed_weapon_num}"]["health"]
+                att = -armed_item[2]["att"]
+                defense = -armed_item[2]["def"]
+                hp = -armed_item[2]["health"]
 
             if item is not None:
                 item = item['bag'][0]
-                init_amount = item[1]
-                if num > init_amount:
-                    await ctx.send(f'가방에 소유 중인 {name}가 입력하신 #{num} 보다 적습니다.')
-                    return
-                else:
-                    att += item[2][f"{num}"]["att"]
-                    defense += item[2][f"{num}"]["def"]
-                    hp += item[2][f"{num}"]["health"]
-                    up = item[2][f"{num}"]["강화"]
-                    print(att, defense, hp, up)
-                    await mydb.arm_weapon(user.id, name, num, up, att, defense, hp)
+                att += item[2]["att"]
+                defense += item[2]["def"]
+                hp += item[2]["health"]
+                up = item[2]["강화"]
+                await mydb.arm_weapon(user.id, name, up, att, defense, hp)
+                await ctx.send(f"{name}({up}강)을 착용 하였습니다.")
             else:
-                await ctx.send('가방에 없는 아이템 입니다.')
-                return
-            await ctx.send(f"{name}#{num}을 착용 하였습니다.")
+                if name is None:
+                    await mydb.disarm_weapon(user.id, att, defense, hp)
+                    await ctx.send(f"무장을 해제 하였습니다.")
+                else:
+                    await ctx.send('가방에 없는 아이템 입니다.')
 
         except Exception as e:
             print(e)
@@ -196,7 +192,7 @@ class Battle(commands.Cog):
 
     @commands.command(aliases=["회복"])
     @cooldown(1, 300, BucketType.user)
-    # @is_channel(channel_id)
+    @is_channel(996612272325660742)
     async def heal(self, ctx):
         """ 현재 체력을 회복합니다. (ko: !착용) """
         try:

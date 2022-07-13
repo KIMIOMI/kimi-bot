@@ -1,7 +1,7 @@
 .idea
 data.json
 rough.py
-heroku/
+heroku
 # me just want to test some code
 # Byte-compiled / optimized / DLL files
 __pycache__/

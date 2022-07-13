@@ -322,10 +322,16 @@ def weapon_split(name:str):
     num = b[0]
     print(weapon_name, num)
 
-
-a = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']
-a = list(map(int, a))
-print(max(a))
+percentage = 10/100
+success = 0
+for i in range(1, 100000):
+    if random.random() < percentage:
+        success += 1
+print(success/1000)
+#
+# a = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']
+# a = list(map(int, a))
+# print(max(a))
 # weapon_split('죽도#3(0강)')
 # time_test()
 # asyncio.run(upgrade_item("죽도"))

@@ -1,13 +1,15 @@
 import requests
 import json
-import os.path
+from urllib.parse import urlparse
+import re
+
 
 class twitter_util():
-    # mainpath = os.getcwd()
-    # filename = os.path.join(mainpath, 'data.json')
-
     with open('./data.json') as f:
         d1 = json.load(f)
+
+    with open('./hashTags.json', encoding='UTF-8') as f:
+        hashTags = json.load(f)["hashTags"]
 
     def __init__(self):
         self.bearer_token = self.d1["BEARER_TOKEN"]
@@ -82,3 +84,37 @@ class twitter_util():
         if response.status_code != 200:
             raise Exception(response.status_code, response.text)
         return response.json()
+
+def twitter_check(link):
+    try:
+        link = urlparse(link)
+        username = link.path.split('/')[1]
+        tu = twitter_util()
+        headers = tu.create_headers()
+
+        url = tu.create_get_user_url(username)
+        json_response = tu.connect_to_endpoint(url[0], headers, url[1])
+        user_id = json_response["data"]["id"]
+
+        url = tu.create_user_timeline_url(user_id)
+        json_response = tu.connect_to_endpoint(url[0], headers, url[1])
+        tweets = json_response["data"]
+
+        for tweet in tweets:
+            text = tweet["text"]
+            id = tweet["id"]
+            created_at = tweet["created_at"]
+            tweethashTags = re.findall(r"#(\w+)", text)
+            hashResult = True
+            for hashtag in tu.hashTags:
+                if hashtag in tweethashTags:
+                    hashResult &= True
+                else:
+                    hashResult &= False
+            if hashResult:
+                if len(text) > 20:
+                    return hashResult, created_at
+
+        return False, 0
+    except:
+        return False, 0

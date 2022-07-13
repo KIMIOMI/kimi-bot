@@ -1,3 +1,5 @@
+import random
+
 import discord
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
@@ -57,7 +59,7 @@ class Shop(commands.Cog):
             title="무기 상점",
             color=0xFF0000,
         )
-        for x, item in db.market.d2["Weapon"].items():
+        for x, item in db.market.market_data["Weapon"].items():
             embed.add_field(
                 name= x,
                 value=f"공격력: {item['att']} | 방어력: {item['def']} | 체력: {item['health']}\n가격: {item['price']} ZEN",
@@ -78,7 +80,7 @@ class Shop(commands.Cog):
             title="가챠템 목록",
             color=0xFF0000,
         )
-        for x, item in db.market.d2["item"].items():
+        for x, item in db.market.market_data["item"].items():
             embed.add_field(
                 name= x,
                 value=f"공격력: {item['att']} | 방어력: {item['def']} | 체력: {item['health']}\n가격: {item['price']} ZEN",
@@ -125,41 +127,28 @@ class Shop(commands.Cog):
             await ctx.send("취급하지 않는 물건입니다..")
             return
 
-        json_items = {}
-
         if item is not None:
             item = item['bag'][0]
             init_amount = item[1]
-            json_items = item[2]
-            last_num = max(list(map(int, list(json_items.keys()))))
             final_amount = amount + init_amount
-            for i in range(last_num, last_num + amount):
-                json_items['{}'.format(i + 1)] = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att,
-                                                  "def": defense,
-                                                  "health": health, "강화확률": upProbability, "강화비용": upPrice}
-            print(json_items)
 
-            await db.ecobag.update_one({"id":id}, {"$set": {f"bag.{index}.1": final_amount, f"bag.{index}.2": json_items}})
+            await db.edit_item(id, index, final_amount)
             await ctx.send(f"{name} {amount}개를 {price} ZEN에 구입하였습니다.")
             return
         else:
-            for i in range(0, amount):
-                json_items['{}'.format(i + 1)] = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att,
-                                                  "def": defense,
-                                                  "health": health, "강화확률": upProbability, "강화비용": upPrice}
-            await db.ecobag.update_one({"id": id}, {"$push": {"bag": [name, amount, json_items]}})
+            await db.add_item(id, name, amount)
             await ctx.send(f"{name} {amount}개를 {price} ZEN에 구입하였습니다.")
 
     @commands.command(aliases=["s", "판다"])
     @cooldown(1, 2, BucketType.user)
     # @is_channel(956377522549981216)
-    async def sell(self, ctx, name: str, num: int):
+    async def sell(self, ctx, name: str, amount: int = 1):
         """ 상점에 물건을 판매합니다. (ko: !판다) """
         user = ctx.author
         user_profile = await db.update_battle_user(user.id)
         armed_weapon = user_profile["armed"]["weapon"]
-        armed_weapon_name, armed_weapon_num = db.market.armed_weapon_name_split(armed_weapon)
-        if armed_weapon_name == name and armed_weapon_num == num:
+        armed_weapon_name = db.market.armed_weapon_name_split(armed_weapon)
+        if armed_weapon_name == name:
             await ctx.send("착용 하고 있는 아이템은 팔 수 없습니다.")
             return
         bal = await db.update_user(user.id)
@@ -173,33 +162,32 @@ class Shop(commands.Cog):
             await ctx.send("취급하지 않는 물건입니다.")
             return
 
-        price = fg[1]
+        if name == '만만한 Hope_Candy의 막대사탕':
+            price = int(round(fg[1] * amount * 0.1, 0))
+        else:
+            price = int(round(fg[1] * amount * 0.7, 0))
 
         u_bal = bal["bank"]
 
-        for x in bag['bag']:
-            if x[0] == name:
-                init_amount = x[1]
-                if init_amount == 1:
-                    if name == '만만한 Hope_Candy의 막대사탕':
-                        price = int(round(price * init_amount * 0.1, 0))
-                    else:
-                        price = int(round(price * init_amount * 0.7, 0))
-                    index = bag['bag'].index(x)
-                    await db.remove_item(ctx.author.id, index)
-                    await db.update_bank(ctx.author.id, u_bal + price)
-                    await ctx.send(f"{name}#{num} 판매 성공! {price} ZEN을 드리겠습니다.")
-                    return
-                else:
-                    final_amount = init_amount - 1
-                    price = int(round(price * 0.7, 0))
-                    index = bag['bag'].index(x)
-                    await db.edit_item(ctx.author.id, index, final_amount, num)
-                    await db.update_bank(ctx.author.id, u_bal + price)
-                    await ctx.send(f"{name}#{num} 판매 성공! {price} ZEN을 드리겠습니다.")
-                    return
+        item, index = await db.update_upgrade_item(user.id, name)
 
-        await ctx.send("없는 물건은 못 팝니다.")
+        if item is not None:
+            item = item['bag'][0]
+            init_amount = item[1]
+            if amount > init_amount:
+                await ctx.send("수량을 다시 확인해주세요")
+                return
+
+            final_amount = init_amount - amount
+            if final_amount == 0:
+                await db.remove_item(user.id, name)
+                await db.update_bank(user.id, u_bal + price)
+            else:
+                await db.edit_item(user.id, index, final_amount)
+                await db.update_bank(user.id, u_bal + price)
+            await ctx.send(f"{name} {amount}개를 판매하였습니다. 총 {price} ZEN을 드리겠습니다.")
+        else:
+            await ctx.send("없는 물건은 못 팝니다.")
 
     @commands.command(aliases=["가챠"])
     @cooldown(1, 2, BucketType.user)
@@ -216,13 +204,11 @@ class Shop(commands.Cog):
         fg = db.market.items.get(item)
 
         if fg is None or fg[0] != '가챠':
-            await ctx.send("취급하지 않는 물건입니다..")
+            await ctx.send("가챠템 민팅 문제 발생! 관리자에게 문의 하세요")
             return
         amount = 1
         price = fg[1] * amount
         name = fg[2]
-
-
         u_bal = bal["bank"]
 
         if u_bal < price:
@@ -277,7 +263,7 @@ class Shop(commands.Cog):
             )
         for x in page_items:
             fg = db.market.items.get(x[0])
-            embed.add_field(name=fg[2], value=f"{x[1]}", inline=False)
+            embed.add_field(name=f"{fg[2]}({x[2]['강화']}강)", value=f"{x[1]}", inline=False)
 
         embed.set_footer(
             text=f"요청자 : {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
@@ -287,7 +273,7 @@ class Shop(commands.Cog):
     @commands.command(aliases=["item", "템"])
     @cooldown(1, 2, BucketType.user)
     # @is_channel(956377522549981216)
-    async def infoitem(self, ctx, name: str, num:int = 1):
+    async def infoitem(self, ctx, name: str):
         """ 아이템 정보를 확인합니다. (ko: !템) """
         bag = await db.update_bag(ctx.author.id)
         if bag is None:
@@ -297,73 +283,76 @@ class Shop(commands.Cog):
         if item is not None:
             item = item['bag'][0]
             init_amount = item[1]
-            if num > init_amount:
-                await ctx.send(f'가방에 소유 중인 {name}가 입력하신 #{num} 보다 적습니다.')
-                return
-            else:
-                stats = f'공격력: {item[2][f"{num}"]["att"]}\n방어력: {item[2][f"{num}"]["def"]}\n체력: {item[2][f"{num}"]["health"]}\n'
-                upProbability = item[2][f"{num}"]["강화확률"]
-                upPrice = item[2][f"{num}"]["강화비용"]
-                total_up = item[2][f"{num}"]["강화"]
-                image = db.market.item(name)[6]
-                embed = discord.Embed(
-                    title=f'{ctx.author.name}의 {name}#{num} ({total_up}강)',
-                    color=discord.Color.gold()
-                )
+            stats = f'공격력: {item[2]["att"]}\n방어력: {item[2]["def"]}\n체력: {item[2]["health"]}\n'
+            upProbability = item[2]["강화확률"]
+            upPrice = item[2]["강화비용"]
+            total_up = item[2]["강화"]
+            image = db.market.item(name)[6]
+            embed = discord.Embed(
+                title=f'{ctx.author.name}의 {name}({total_up}강)',
+                color=discord.Color.gold()
+            )
 
-                embed.set_thumbnail(url=image)
-                embed.add_field(name="Stats", value=stats, inline=False)
-                embed.add_field(name="강화확률", value=upProbability, inline=True)
-                embed.add_field(name="강화비용", value=upPrice, inline=True)
-                await ctx.send(embed=embed)
+            embed.set_thumbnail(url=image)
+            embed.add_field(name="Stats", value=stats, inline=False)
+            embed.add_field(name="강화확률", value=f'{upProbability}%', inline=True)
+            embed.add_field(name="강화비용", value=f'{upPrice} ZEN', inline=True)
+            await ctx.send(embed=embed)
         else:
             await ctx.send('가방에 없는 아이템 입니다.')
 
     @commands.command(aliases=["up", "강화"])
     @cooldown(1, 2, BucketType.user)
     # @is_channel(956377522549981216)
-    async def upgrade(self, ctx, name: str, num: int = 1):
+    async def upgrade(self, ctx, name: str):
         """ 아이템을 강화 합니다. (ko: !강화) """
-        id = ctx.author.id
-        bal = await db.update_user(id)
-        bag = await db.update_bag(id)
+        user = ctx.author
+        user_profile = await db.update_battle_user(user.id)
+        armed_weapon = user_profile["armed"]["weapon"]
+        armed_weapon_name = db.market.armed_weapon_name_split(armed_weapon)
+        if armed_weapon_name == name:
+            await ctx.send("착용 하고 있는 아이템은 강화 할 수 없습니다.")
+            return
+        bal = await db.update_user(user.id)
+        bag = await db.update_bag(user.id)
         if bal is None or bag is None:
             await ctx.send("문제 발생! 관리자에게 문의 하세요")
-        item, index = await db.update_upgrade_item(id, name)
+        item, index = await db.update_upgrade_item(user.id, name)
 
         u_bal = bal["bank"]
 
-        price, _, upProbability, att, defense, health, _,  _bool = db.market.item(name)
+        _, upPrice, upProbability, _, _, _, _,  _bool = db.market.item(name)
         if _bool is False:
             await ctx.send("없는 아이템 입니다.")
             return
 
-        if price > u_bal:
+        if upPrice > u_bal:
             await ctx.send('은행에 잔고가 부족합니다.')
             return
 
         if item is not None:
             item = item['bag'][0]
             init_amount = item[1]
-            if num > init_amount:
-                await ctx.send(f'가방에 소유 중인 {name}가 입력하신 #{num} 보다 적습니다.')
+            total_up = item[2]['강화']
+            att = round(item[2]['att'] * 1.1)
+            defense = round(item[2]['def'] * 1.1)
+            health = round(item[2]['health'] * 1.1)
+
+            await db.update_bank(user.id, u_bal - upPrice)
+            if random.random() <= (upProbability / 100):
+                await db.ecobag.update_one({"id": user.id}, {
+                    "$inc": {f"bag.{index}.2.강화": 1, f"bag.{index}.2.강화 성공": 1, f"bag.{index}.2.강화 시도": 1},
+                    "$set": {f"bag.{index}.2.att": att, f"bag.{index}.2.def": defense, f"bag.{index}.2.health": health}})
+                
+                await ctx.send(f'강화 성공! {user.mention}의 {name}이 {total_up+1}강이 되었습니다.')
                 return
             else:
-                total_up = item[2][f'{num}']['강화']
-                await db.update_bank(id, u_bal - price)
-                if np.random.binomial(1, upProbability / 100) == 1:
-                    await db.ecobag.update_one({"id": id}, {
-                        "$inc": {f"bag.{index}.2.{num}.강화": 1, f"bag.{index}.2.{num}.강화 성공": 1, f"bag.{index}.2.{num}.강화 시도": 1},
-                        "$mul": {f"bag.{index}.2.{num}.att": 1.1, f"bag.{index}.2.{num}.def": 1.1, f"bag.{index}.2.{num}.health": 1.1}})
-
-                    await ctx.send(f'강화 성공! {ctx.author.mention}의 {name}#{num}이 {total_up+1}강이 되었습니다.')
-                    return
-                else:
-                    await db.ecobag.update_one({"id": id}, {
-                        "$inc": {f"bag.{index}.2.{num}.강화 시도": 1}})
-                    await ctx.send(f'강화 실패! {ctx.author.mention}의 {name}#{num}이 여전히 {total_up}강 입니다.')
-                    return
-        await ctx.send('가방에 없는 아이템 입니다.')
+                await db.ecobag.update_one({"id": user.id}, {
+                    "$inc": {f"bag.{index}.2.강화 시도": 1}})
+                await ctx.send(f'강화 실패! {ctx.author.mention}의 {name}이 여전히 {total_up}강 입니다.')
+                return
+        else:
+            await ctx.send('가방에 없는 아이템 입니다.')
 
     # leaderboard
     @commands.command(aliases=["lb"])
