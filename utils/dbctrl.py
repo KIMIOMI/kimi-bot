@@ -27,14 +27,17 @@ class Db():
         # wallet = current money, bank = money in bank
         await self.ecomoney.insert_one(new_user)
 
-    async def open_bag(self, id : int):
+    async def open_bag(self, id: int):
         if id is not None:
             newuser = {"id": id, "bag": []}
             await self.ecobag.insert_one(newuser)
 
-    async def open_user(self, id : int):
+    async def open_user(self, id: int):
         if id is not None:
-            newuser = {"id": id, "level": 1, "exp": 0, "current_hp": 10, "armed":{"weapon": "", "armor": "", "shoes": ""},"att": 1, "def": 1, "health": 10, "skill": [], "title": []} ## 추가
+            newuser = {"id": id, "level": 1, "exp": 0, "current_hp": 10,
+                       "armed":{"weapon": "", "armor": "", "shoes": ""},"att": 1, "def": 1,
+                       "health": 10, "skill": [{"name": "찌르기", "level": 1, "att": 1, "type": "normal"}],
+                       "title": [{"name": "초보 헌터", "rarity": "normal"}]}
             await self.ecouser.insert_one(newuser)
 
     async def update_wallet(self, id: int, wallet: int):
@@ -128,7 +131,7 @@ class Db():
                         elif key == "health":
                             val = 10
                         elif key == "skill":
-                            val = [{"name": "찌르기", "level": 1, "att": 1, "type":"normal"}]
+                            val = [{"name": "찌르기", "level": 1, "att": 1, "type": "normal"}]
                         elif key == "title":
                             val = [{"name": "초보 헌터", "rarity": "normal"}]
                         elif key == "current_hp":

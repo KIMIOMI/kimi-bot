@@ -80,7 +80,7 @@ class Battle(commands.Cog):
 
     @commands.command(aliases=["프로필"])
     @cooldown(1, 2, BucketType.user)
-    @is_channel(996612272325660742)
+    # @is_channel(996612272325660742)
     async def profile(self, ctx, user: discord.Member = None):
         """ 유저의 스탯을 확인합니다.(ko: !프로필) """
         try:
@@ -114,14 +114,14 @@ class Battle(commands.Cog):
                 ment += f"{skill['name']} lv:{skill['level']}\n"
             embed.add_field(
                 name="스킬",
-                value=ment,
+                value=f'{ment}',
             )
             ment = f''
             for title in user_profile['title']:
                 ment += f"{title['name']} ({title['rarity']})\n"
             embed.add_field(
                 name="칭호",
-                value=ment,
+                value=f' {ment}',
             )
             embed.set_footer(
                 text=f"요청자: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"

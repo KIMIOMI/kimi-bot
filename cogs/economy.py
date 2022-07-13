@@ -46,7 +46,7 @@ class Economy(commands.Cog):
         for i in range(0, end_time):
             await asyncio.sleep(10)
             await ctx.send(f"경매진행 {i + 1}분 경과! {self.auction_str}")
-        if self.bid_user is not "":
+        if self.bid_user != "":
             user_bal = await db.update_user(self.bid_user.id)
             if user_bal["bank"] < self.bid_money:
                 await ctx.send(f"{self.bid_user.mention}님 계좌에 현재 낙찰에 지불할 금액이 없습니다!")
