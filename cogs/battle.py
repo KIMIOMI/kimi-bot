@@ -80,7 +80,7 @@ class Battle(commands.Cog):
 
     @commands.command(aliases=["프로필"])
     @cooldown(1, 2, BucketType.user)
-    # @is_channel(996612272325660742)
+    @is_channel(996612272325660742)
     async def profile(self, ctx, user: discord.Member = None):
         """ 유저의 스탯을 확인합니다.(ko: !프로필) """
         try:
@@ -93,11 +93,11 @@ class Battle(commands.Cog):
 
             nation =' '
             if eka_role in user.roles:
-                nation += 'eka(에카, एक)'
+                nation = 'eka(에카, एक)'
             if mudrA_role in user.roles:
-                nation += 'mudrA(무드라, मुद्रा)'
+                nation = 'mudrA(무드라, मुद्रा)'
             if gItA_role in user.roles:
-                nation += 'gItA(기타, गीता)'
+                nation = 'gItA(기타, गीता)'
 
             embed = discord.Embed(
                 timestamp=ctx.message.created_at,
@@ -114,14 +114,14 @@ class Battle(commands.Cog):
                 ment += f"{skill['name']} lv:{skill['level']}\n"
             embed.add_field(
                 name="스킬",
-                value=f'{ment}',
+                value=ment,
             )
-            ment = f''
+            ment = ''
             for title in user_profile['title']:
                 ment += f"{title['name']} ({title['rarity']})\n"
             embed.add_field(
                 name="칭호",
-                value=f' {ment}',
+                value=ment,
             )
             embed.set_footer(
                 text=f"요청자: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
