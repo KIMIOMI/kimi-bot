@@ -8,8 +8,8 @@ from utils.dbctrl import Db
 mydb = Db()
 
 monster_json = {
-    "하급빌런": {'name': '하급 빌런', 'health': 50, 'att': 1, 'def': 1, 'exp': 10, 'reward': 0},
-    "중급빌런": {'name': '중급 빌런', 'health': 100, 'att': 20, 'def': 11, 'exp': 100, 'reward': 100},
+    "하급빌런": {'name': '하급 빌런', 'health': 5, 'att': 1, 'def': 1, 'exp': 10, 'reward': 0},
+    "중급빌런": {'name': '중급 빌런', 'health': 50, 'att': 20, 'def': 11, 'exp': 100, 'reward': 100},
     "상급빌런": {'name': '상급 빌런', 'health': 500, 'att': 80, 'def': 50, 'exp': 500, 'reward': 1000},
 }
 
