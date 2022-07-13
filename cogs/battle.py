@@ -4,8 +4,14 @@ from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
 from utils.dbctrl import Db
 
-
 mydb = Db()
+
+monster_json = {
+    "하급빌런": {'name': '하급 빌런', 'health': 50, 'att': 1, 'def': 1, 'exp': 10, 'reward': 0},
+    "중급빌런": {'name': '중급 빌런', 'health': 100, 'att': 20, 'def': 11, 'exp': 100, 'reward': 100},
+    "상급빌런": {'name': '상급 빌런', 'health': 500, 'att': 80, 'def': 50, 'exp': 500, 'reward': 1000},
+}
+
 
 def is_channel(channelId):
     def predicate(ctx):
@@ -14,19 +20,19 @@ def is_channel(channelId):
     return commands.check(predicate)
 
 
-async def add_exp(id : int, level : int, exp_now: int, exp: int, hp: int):
-        exp_total = exp_now + exp
-        next_exp = round(0.04 * (level ** 3) + 0.8 * (level ** 2) + 2 * level)
-        ## level up
-        if exp_total > next_exp:
-            exp_now = exp_total - next_exp
-            await mydb.ecouser.update_one({"id": id}, {"$inc": {"level": 1, "att": 2, "def": 2, "health": 20}})
-            await mydb.ecouser.update_one({"id": id}, {"$set": {"exp": 0}})
-            await mydb.update_user_current_hp(id, hp + 20)
-            return True
-        else:
-            await mydb.ecouser.update_one({"id": id}, {"$set": {"exp": exp_total}})
-            return False
+async def add_exp(id: int, level: int, exp_now: int, exp: int, hp: int):
+    exp_total = exp_now + exp
+    next_exp = round(0.04 * (level ** 3) + 0.8 * (level ** 2) + 2 * level)
+    ## level up
+    if exp_total > next_exp:
+        exp_now = exp_total - next_exp
+        await mydb.ecouser.update_one({"id": id}, {"$inc": {"level": 1, "att": 2, "def": 2, "health": 20}})
+        await mydb.ecouser.update_one({"id": id}, {"$set": {"exp": 0}})
+        await mydb.update_user_current_hp(id, hp + 20)
+        return True
+    else:
+        await mydb.ecouser.update_one({"id": id}, {"$set": {"exp": exp_total}})
+        return False
 
 
 async def hunting(id: int, monster, user):
@@ -46,8 +52,8 @@ async def hunting(id: int, monster, user):
         return False, False, 0, 0
 
     while (m_hp * u_hp) > 0:
-        m_hp -= round((u_att - m_def)*random.randint(5, 10)/10) if (u_att - m_def) > 0 else random.randint(1, 5)
-        u_hp -= round((m_att - u_def)*random.randint(5, 10)/10) if (m_att - u_def) > 0 else random.randint(1, 5)
+        m_hp -= round((u_att - m_def) * random.randint(5, 10) / 10) if (u_att - m_def) > 0 else random.randint(1, 5)
+        u_hp -= round((m_att - u_def) * random.randint(5, 10) / 10) if (m_att - u_def) > 0 else random.randint(1, 5)
         print("{} 라운드 m_hp = {} u_hp = {}".format(round_, m_hp, u_hp))
         round_ += 1
 
@@ -85,7 +91,7 @@ class Battle(commands.Cog):
             mudrA_role = discord.utils.find(lambda r: r.id == 950255295786016768, ctx.message.guild.roles)
             gItA_role = discord.utils.find(lambda r: r.id == 950255426740568105, ctx.message.guild.roles)
 
-            nation =''
+            nation = ''
             if eka_role in user.roles:
                 nation += 'eka(에카, एक)'
             if mudrA_role in user.roles:
@@ -102,7 +108,7 @@ class Battle(commands.Cog):
             embed.add_field(
                 name="스탯",
                 value=f"공격력: `{user_profile['att']}`\n방어력: `{user_profile['def']}`\n체력: `{user_profile['health']}`"
-           )
+            )
             ment = ''
             for skill_name, skill in user_profile['skill'].items():
                 ment += f"{skill_name} lv:{skill['level']}\n"
@@ -129,12 +135,16 @@ class Battle(commands.Cog):
     @commands.command(aliases=["사냥"])
     @cooldown(1, 2, BucketType.user)
     @is_channel(996612272325660742)
-    async def hunt(self, ctx):
+    async def hunt(self, ctx, monster: str):
         """ 사냥을 시작합니다. (ko: !사냥) """
         try:
             user = ctx.author
             user_profile = await mydb.update_battle_user(user.id)
-            monster = {'health': 50, 'att': 1, 'def': 1, 'exp': 10, 'reward': 0}
+            monster = monster_json[monster]
+            if monster is None:
+                await ctx.send("없는 몬스터 입니다.")
+                return
+
             hunting_result, level_up, gain_exp, u_hp = await hunting(user.id, monster, user_profile)
             if hunting_result:
                 await ctx.send(f"<{user.mention}> 사냥에 성공하였습니다. 경험치 {gain_exp}을 획득하였습니다."
@@ -209,6 +219,7 @@ class Battle(commands.Cog):
         except Exception as e:
             print(e)
             await ctx.send('취..익 취이..ㄱ')
+
 
 def setup(bot):
     bot.add_cog(Battle(bot))
