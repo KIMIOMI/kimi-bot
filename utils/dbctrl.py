@@ -127,8 +127,10 @@ class Db():
                             val = {"weapon": "", "armor": "", "shoes": ""}
                         elif key == "health":
                             val = 10
-                        elif key == "skill" or key == "title":
-                            val = {}
+                        elif key == "skill":
+                            val = [{"name": "찌르기", "level": 1, "att": 1, "type":"normal"}]
+                        elif key == "title":
+                            val = [{"name": "초보 헌터", "rarity": "normal"}]
                         elif key == "current_hp":
                             val = 10
                         else:
