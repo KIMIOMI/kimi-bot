@@ -358,17 +358,25 @@ class Shop(commands.Cog):
             await ctx.send('가방에 없는 아이템 입니다.')
 
     # leaderboard
-    @commands.command(aliases=["lb"])
+    @commands.command(aliases=["lb", "랭킹"])
     @cooldown(1, 2, BucketType.user)
-    async def leaderboard(self, ctx):
+    @is_channel(986902833871855626)
+    async def leaderboard(self, ctx, field: str):
         """ Checkout the leaderboard."""
-
-        rankings = db.ecomoney.find().sort("bank", -1)
+        if field == "은행":
+            rankings = db.ecomoney.find().sort("bank", -1)
+        elif field == "레벨":
+            rankings = db.ecouser.find().sort("level", -1)
+        elif field == "토지":
+            rankings = db.ecomoney.find().sort("land", -1)
+        else:
+            await ctx.send("없는 랭킹 입니다!")
+            return
 
         i = 1
 
         embed = discord.Embed(
-            title=f"{ctx.guild.name}'s Leaderboard",
+            title=f"{ctx.guild.name} {field} 랭킹",
             description=f"\u200b",
             color=0xFF0000
         )
@@ -376,10 +384,23 @@ class Shop(commands.Cog):
         async for x in rankings:
             try:
                 temp = ctx.guild.get_member(x["id"])
-                tb = x["bank"]
-                embed.add_field(
-                    name=f"{i} : {temp.name}", value=f"Money: ${tb}", inline=False
-                )
+                if field == "은행":
+                    tb = x["bank"]
+                    embed.add_field(
+                        name=f"{i} : {temp.name}", value=f"{tb} ZEN", inline=False
+                    )
+                elif field == "레벨":
+                    tb = x["level"]
+                    embed.add_field(
+                        name=f"{i} : {temp.name}", value=f"레벨: {tb}", inline=False
+                    )
+                elif field == "토지":
+                    tb = x["land"]
+                    embed.add_field(
+                        name=f"{i} : {temp.name}", value=f"{tb}평", inline=False
+                    )
+
+
                 i += 1
             except:
                 pass
@@ -387,7 +408,7 @@ class Shop(commands.Cog):
                 break
 
         embed.set_footer(
-            text=f"Requested By: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
+            text=f"요청자: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
         )
         await ctx.send(embed=embed)
 
