@@ -50,7 +50,7 @@ class 경매(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("Battle Cog Loaded Succesfully")
+        print("Action Cog Loaded Succesfully")
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)

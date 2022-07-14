@@ -27,7 +27,7 @@ class 게임(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("Battle Cog Loaded Succesfully")
+        print("Game Cog Loaded Succesfully")
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)

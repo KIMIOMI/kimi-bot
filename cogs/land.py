@@ -26,7 +26,7 @@ class 땅(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("Battle Cog Loaded Succesfully")
+        print("Land Cog Loaded Succesfully")
 
     # Buy land
     @commands.command()

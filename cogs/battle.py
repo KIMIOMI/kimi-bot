@@ -215,15 +215,22 @@ class 사냥(commands.Cog):
     @cooldown(1, 300, BucketType.user)
     @is_channel(db.channel_data["사냥터"], db.channel_data["주막"])
     async def 회복(self, ctx):
-        """ 현재 체력을 회복합니다. (!회복) """
+        """ 20 Zen을 사용하여 현재 체력을 회복합니다. 회복력 = 레벨 * 20hp(!회복) """
         try:
             user = ctx.author
             user_profile = await db.update_battle_user(user.id)
+            user_bal = await db.update_user(user.id)
+            user_wallet = user_bal['wallet']
+            if user_wallet < 20:
+                await ctx.send("지갑에 20 ZEN이 없어 힐을 받을 수 없습니다.")
+                return
+            u_level = user_profile['level']
             u_hp = user_profile['current_hp']
-            u_hp += 50
+            u_hp += 20 * u_level
             if u_hp > user_profile['health']:
                 u_hp = user_profile['health']
             await db.update_user_current_hp(user.id, u_hp)
+            await db.update_wallet(user.id, user_wallet - 20)
             await ctx.send(f"{user.mention}의 체력이 회복되었습니다"
                            f"현재 체력은 {u_hp} 입니다.")
 

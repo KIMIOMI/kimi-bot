@@ -26,7 +26,7 @@ class 돈벌이(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("Battle Cog Loaded Succesfully")
+        print("Wage Cog Loaded Succesfully")
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)

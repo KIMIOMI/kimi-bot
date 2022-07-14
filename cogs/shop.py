@@ -324,7 +324,7 @@ class 상점(commands.Cog):
 
         u_bal = bal["bank"]
 
-        _, upPrice, upProbability, _, _, _, _, _bool = db.market.item(name)
+        _, upPrice, upProbability, _, _, _, image, _bool = db.market.item(name)
         if _bool is False:
             await ctx.send("없는 아이템 입니다.")
             return
@@ -353,7 +353,7 @@ class 상점(commands.Cog):
             else:
                 await db.ecobag.update_one({"id": user.id}, {
                     "$inc": {f"bag.{index}.2.강화 시도": 1}})
-                await ctx.send(f'강화 실패! {ctx.author.mention}의 {name}이 여전히 {total_up}강 입니다.')
+                await ctx.send(f'강화 실패! {user.mention}의 {name}이 여전히 {total_up}강 입니다.')
                 return
         else:
             await ctx.send('가방에 없는 아이템 입니다.')
