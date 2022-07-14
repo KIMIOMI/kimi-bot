@@ -105,7 +105,7 @@ class 돈(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["주막"])
+    @is_channel(db.channel_data["주막"], db.channel_data["무기상점"])
     async def 자산(self, ctx, user: discord.Member = None):
         """
             유저의 자산을 확인합니다. 유저명 누락시 본인 (!자산 [유저명])
