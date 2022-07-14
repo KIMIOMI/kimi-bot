@@ -9,6 +9,8 @@ class Db():
     def __init__(self):
         with open('./data.json') as f:
             mongo_data = json.load(f)
+        with open('./channel.json', encoding='UTF-8') as f:
+            self.channel_data = json.load(f)
 
         nest_asyncio.apply()
         mongo_url = mongo_data['mongo']

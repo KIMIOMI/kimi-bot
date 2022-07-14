@@ -322,7 +322,7 @@ def weapon_split(name:str):
     num = b[0]
     print(weapon_name, num)
 
-upProbability = 50
+upProbability = 10
 success = 0
 for i in range(1, 1000):
     if random.random() <= (upProbability / 100):

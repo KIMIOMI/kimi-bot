@@ -5,7 +5,7 @@ from discord.ext.commands import BucketType, cooldown
 from utils.dbctrl import Db
 
 
-mydb = Db()
+db = Db()
 
 monster_json = {
     "하급빌런": {'name': '하급 빌런', 'health': 5, 'att': 1, 'def': 1, 'exp': 10, 'reward': 0},
@@ -13,9 +13,14 @@ monster_json = {
     "상급빌런": {'name': '상급 빌런', 'health': 500, 'att': 80, 'def': 50, 'exp': 500, 'reward': 1000},
 }
 
-def is_channel(channelId):
+
+def is_channel(*channelId):
     def predicate(ctx):
-        return ctx.message.channel.id == channelId
+        result = False
+        for channel in channelId:
+            ctx.message.channel.id == channel
+            result = True
+        return result
 
     return commands.check(predicate)
 
@@ -26,12 +31,12 @@ async def add_exp(id : int, level : int, exp_now: int, exp: int, hp: int):
         ## level up
         if exp_total > next_exp:
             exp_now = exp_total - next_exp
-            await mydb.ecouser.update_one({"id": id}, {"$inc": {"level": 1, "att": 2, "def": 2, "health": 20}})
-            await mydb.ecouser.update_one({"id": id}, {"$set": {"exp": 0}})
-            await mydb.update_user_current_hp(id, hp + 20)
+            await db.ecouser.update_one({"id": id}, {"$inc": {"level": 1, "att": 2, "def": 2, "health": 20}})
+            await db.ecouser.update_one({"id": id}, {"$set": {"exp": 0}})
+            await db.update_user_current_hp(id, hp + 20)
             return True
         else:
-            await mydb.ecouser.update_one({"id": id}, {"$set": {"exp": exp_total}})
+            await db.ecouser.update_one({"id": id}, {"$set": {"exp": exp_total}})
             return False
 
 
@@ -58,18 +63,18 @@ async def hunting(id: int, monster, user):
         round_ += 1
 
     if m_hp <= 0:
-        await mydb.update_user_current_hp(id, u_hp)
+        await db.update_user_current_hp(id, u_hp)
         if await add_exp(id, u_level, u_exp, m_exp, u_total_hp):
             return True, True, m_exp, u_hp
         else:
             return True, False, m_exp, u_hp
     elif u_hp <= 0:
-        await mydb.update_user_current_hp(id, 0)
+        await db.update_user_current_hp(id, 0)
         return False, False, 0, 0
 
 
-class Battle(commands.Cog):
-    """ Commands related to Battle"""
+class 사냥(commands.Cog):
+    """ 사냥터 명령어 """
 
     def __init__(self, bot):
         self.bot = bot
@@ -78,15 +83,16 @@ class Battle(commands.Cog):
     async def on_ready(self):
         print("Battle Cog Loaded Succesfully")
 
-    @commands.command(aliases=["프로필"])
+    @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(996612272325660742)
-    async def profile(self, ctx, user: discord.Member = None):
-        """ 유저의 스탯을 확인합니다.(ko: !프로필) """
+    @is_channel(db.channel_data["사냥터"], db.channel_data["주막"])
+    async def 프로필(self, ctx, user: discord.Member = None):
+        """ 유저의 스탯을 확인합니다. (!프로필)
+         """
         try:
             if user is None:
                 user = ctx.author
-            user_profile = await mydb.update_battle_user(user.id)
+            user_profile = await db.update_battle_user(user.id)
             eka_role = discord.utils.find(lambda r: r.id == 950255167264141412, ctx.message.guild.roles)
             mudrA_role = discord.utils.find(lambda r: r.id == 950255295786016768, ctx.message.guild.roles)
             gItA_role = discord.utils.find(lambda r: r.id == 950255426740568105, ctx.message.guild.roles)
@@ -129,19 +135,22 @@ class Battle(commands.Cog):
             embed.set_thumbnail(url=user.avatar_url)
             await ctx.send(embed=embed)
         except Exception as e:
-            print(e)
-            await ctx.send('취..익 취이..ㄱ')
+            print("!프로필 ", e)
+            await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
-    @commands.command(aliases=["사냥"])
+    @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(996612272325660742)
-    async def hunt(self, ctx, monster: str):
-        """ 사냥을 시작합니다. (ko: !사냥) """
+    @is_channel(db.channel_data["사냥터"])
+    async def 사냥(self, ctx, monster: str):
+        """ 사냥을 시작합니다. (!사냥 [몬스터]) 현재 사냥 가능한 빌런 : 상급빌런, 중급빌런, 하급빌런
+        """
         try:
             user = ctx.author
-            user_profile = await mydb.update_battle_user(user.id)
-            monster = monster_json[monster]
-            if monster is None:
+            user_profile = await db.update_battle_user(user.id)
+
+            if monster in monster_json.keys():
+                monster = monster_json[monster]
+            else:
                 await ctx.send("없는 몬스터 입니다.")
                 return
 
@@ -155,24 +164,26 @@ class Battle(commands.Cog):
                 await ctx.send(f"{user.mention}님 축하합니다. 레벨 업 하였습니다")
 
         except Exception as e:
-            print(e)
-            await ctx.send('취..익 취이..ㄱ')
+            print("!사냥 ", e)
+            await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
-    @commands.command(aliases=["착용"])
+    @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(996612272325660742)
-    async def arm(self, ctx, name: str = None):
-        """ 무기를 착용합니다. (ko: !착용) """
+    @is_channel(db.channel_data["사냥터"])
+    async def 착용(self, ctx, name: str = None):
+        """ 무기를 착용합니다. (!착용 "아이템 명") 띄어 쓰기가 있는 아이템은 쌍 따옴표로 감싸주세요!
+        """
+
         try:
             user = ctx.author
-            user_profile = await mydb.update_battle_user(user.id)
-            item, _ = await mydb.update_upgrade_item(user.id, name)
+            user_profile = await db.update_battle_user(user.id)
+            item, _ = await db.update_upgrade_item(user.id, name)
             armed_weapon = user_profile['armed']['weapon']
             if armed_weapon == '':
                 att, defense, hp = 0, 0, 0
             else:
-                armed_weapon_name = mydb.market.armed_weapon_name_split(armed_weapon)
-                armed_item, _ = await mydb.update_upgrade_item(user.id, armed_weapon_name)
+                armed_weapon_name = db.market.armed_weapon_name_split(armed_weapon)
+                armed_item, _ = await db.update_upgrade_item(user.id, armed_weapon_name)
                 if armed_item is None:
                     await ctx.send("에러 발생 관리자에게 문의해 주세요! 착용무기 에러")
                     return
@@ -187,38 +198,38 @@ class Battle(commands.Cog):
                 defense += item[2]["def"]
                 hp += item[2]["health"]
                 up = item[2]["강화"]
-                await mydb.arm_weapon(user.id, name, up, att, defense, hp)
+                await db.arm_weapon(user.id, name, up, att, defense, hp)
                 await ctx.send(f"{name}({up}강)을 착용 하였습니다.")
             else:
                 if name is None:
-                    await mydb.disarm_weapon(user.id, att, defense, hp)
+                    await db.disarm_weapon(user.id, att, defense, hp)
                     await ctx.send(f"무장을 해제 하였습니다.")
                 else:
                     await ctx.send('가방에 없는 아이템 입니다.')
 
         except Exception as e:
-            print(e)
-            await ctx.send('취..익 취이..ㄱ')
+            print("!착용 ", e)
+            await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
-    @commands.command(aliases=["회복"])
+    @commands.command()
     @cooldown(1, 300, BucketType.user)
-    @is_channel(996612272325660742)
-    async def heal(self, ctx):
-        """ 현재 체력을 회복합니다. (ko: !착용) """
+    @is_channel(db.channel_data["사냥터"])
+    async def 회복(self, ctx):
+        """ 현재 체력을 회복합니다. (!회복) """
         try:
             user = ctx.author
-            user_profile = await mydb.update_battle_user(user.id)
+            user_profile = await db.update_battle_user(user.id)
             u_hp = user_profile['current_hp']
             u_hp += 50
             if u_hp > user_profile['health']:
                 u_hp = user_profile['health']
-            await mydb.update_user_current_hp(user.id, u_hp)
+            await db.update_user_current_hp(user.id, u_hp)
             await ctx.send(f"{user.mention}의 체력이 회복되었습니다"
                            f"현재 체력은 {u_hp} 입니다.")
 
         except Exception as e:
-            print(e)
-            await ctx.send('취..익 취이..ㄱ')
+            print("!회복 ", e)
+            await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
 def setup(bot):
-    bot.add_cog(Battle(bot))
+    bot.add_cog(사냥(bot))
