@@ -11,8 +11,8 @@ def is_channel(*channelId):
     def predicate(ctx):
         result = False
         for channel in channelId:
-            ctx.message.channel.id == channel
-            result = True
+            if ctx.message.channel.id == channel:
+                result = True
         return result
 
     return commands.check(predicate)
