@@ -212,6 +212,38 @@ class 사냥(commands.Cog):
             await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
     @commands.command()
+    @cooldown(1, 2, BucketType.user)
+    @is_channel(db.channel_data["사냥터"], db.channel_data["무기상점"])
+    async def 해제(self, ctx):
+        """ 착용 중인 무기를 해제 합니다. (!착용 "아이템 명")
+        """
+        try:
+            user = ctx.author
+            user_profile = await db.update_battle_user(user.id)
+            armed_weapon = user_profile['armed']['weapon']
+
+            if armed_weapon == '':
+                await ctx.send("착용한 무기가 없습니다.")
+                return
+            else:
+                armed_weapon_name = db.market.armed_weapon_name_split(armed_weapon)
+                armed_item, _ = await db.update_upgrade_item(user.id, armed_weapon_name)
+                if armed_item is None:
+                    await ctx.send("에러 발생 관리자에게 문의해 주세요! 착용무기 에러")
+                    return
+                armed_item = armed_item['bag'][0]
+                att = -armed_item[2]["att"]
+                defense = -armed_item[2]["def"]
+                hp = -armed_item[2]["health"]
+
+            await db.disarm_weapon(user.id, att, defense, hp)
+            await ctx.send(f"무장을 해제 하였습니다.")
+
+        except Exception as e:
+            print("!착용 ", e)
+            await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
+
+    @commands.command()
     @cooldown(1, 300, BucketType.user)
     @is_channel(db.channel_data["사냥터"], db.channel_data["주막"])
     async def 회복(self, ctx):
