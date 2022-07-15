@@ -16,10 +16,10 @@ class Db():
         mongo_url = mongo_data['mongo']
         cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
         self.market = Market()
-        self.ecomoney = cluster["eco"]["money"]
-        self.ecobag = cluster["eco"]["bag"]
-        self.ecouser = cluster["eco"]["user"]
-        self.ecoinfo = cluster["eco"]["info"]
+        self.ecomoney = cluster["aoz"]["money"]
+        self.ecobag = cluster["aoz"]["bag"]
+        self.ecouser = cluster["aoz"]["user"]
+        self.ecoinfo = cluster["aoz"]["info"]
         self.key = ["id", "wallet", "bank", "land", "wage", "inventory", "gm_time", "tw_time"]
         self.userkey = ["id", "level", "exp", "current_hp", "armed", "att", "def", "health", "skill", "title"]
 

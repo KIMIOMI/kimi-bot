@@ -32,7 +32,7 @@ class 경매(commands.Cog):
     async def auction_loop(self, ctx, end_time):
         for i in range(0, end_time):
             await asyncio.sleep(60)
-            await ctx.send(f"{self.auction_name} 경매진행 {i + 1}분 경과! {self.auction_str}")
+            await ctx.send(f"`{self.auction_name}` 경매진행 {i + 1}분 경과! {self.auction_str}")
         if self.bid_user != "":
             user_bal = await db.update_user(self.bid_user.id)
             if user_bal["bank"] < self.bid_money:
@@ -43,7 +43,7 @@ class 경매(commands.Cog):
                 self.auction_name = ""
                 return
             await db.update_bank(self.bid_user.id, user_bal["bank"] - self.bid_money)
-            await ctx.send(f"축하합니다! {self.bid_user.mention}님이 {self.auction_name}을 {self.bid_money}에 낙찰 받으셨습니다!")
+            await ctx.send(f"축하합니다! {self.bid_user.mention}님이 `{self.auction_name}`을 {self.bid_money}에 낙찰 받으셨습니다!")
         else:
             await ctx.send("아쉽지만 아무도 낙찰 받지 못하였습니다!")
         self.bid_money = 0
@@ -72,7 +72,7 @@ class 경매(commands.Cog):
                 await ctx.send("최소 입찰가를 확인해주세요")
                 return
             self.auction_name = name
-            await ctx.send(f"경매 항목 {name}의 경매를 시작합니다.\n{end_time}분 동안 진행됩니다.\n최소 입찰 금액은 {bid_min} ZEN 입니다.")
+            await ctx.send(f"경매 항목 `{name}`의 경매를 시작합니다.\n{end_time}분 동안 진행됩니다.\n최소 입찰 금액은 {bid_min} ZEN 입니다.")
             self.bid_money = bid_min
             self.bot.loop.create_task(self.auction_loop(ctx, end_time))
 

@@ -253,7 +253,7 @@ class 상점(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["무기상점"], db.channel_data["사냥터"], db.channel_data["주막"])
+    @is_channel(db.channel_data["무기상점"], db.channel_data["사냥터"], db.channel_data["주막"], db.channel_data["강화"])
     async def 가방(self, ctx, page: int = 1):
         """ 가방을 확인합니다. (!가방 [페이지수]) 1페이지당 10개의 아이템이 표시됩니다. """
         if page > 7 or page < 1:
@@ -291,7 +291,7 @@ class 상점(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["무기상점"], db.channel_data["사냥터"])
+    @is_channel(db.channel_data["무기상점"], db.channel_data["사냥터"], db.channel_data["강화"])
     async def 템(self, ctx, *, name: str):
         """ 자신의 아이템 정보를 확인합니다. (!템 [아이템명]) """
         bag = await db.update_bag(ctx.author.id)
@@ -322,7 +322,7 @@ class 상점(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["무기상점"])
+    @is_channel(db.channel_data["무기상점"], db.channel_data["강화"])
     async def 강화(self, ctx, *, name: str):
         """ 아이템을 강화 합니다. (!강화 [아이템명]) """
         user = ctx.author
