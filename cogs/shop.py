@@ -33,7 +33,6 @@ def name_amount_split(input):
 
 class 상점(commands.Cog):
     """ 무기 상점 명령어 """
-
     def __init__(self, bot):
         self.bot = bot
 
@@ -139,7 +138,7 @@ class 상점(commands.Cog):
             await ctx.send(f"은행에 충분한 ZEN이 없습니다. 총 가격은 {price} ZEN 입니다.")
             return
 
-        await db.update_bank(ctx.author.id, u_bal - price)
+
         item, index = await db.update_upgrade_item(id, name)
 
         _, upPrice, upProbability, att, defense, health, image, _bool = db.market.item(name)
@@ -147,6 +146,7 @@ class 상점(commands.Cog):
             await ctx.send("취급하지 않는 물건입니다..")
             return
 
+        await db.add_bank(ctx.author.id, -price)
         if item is not None:
             item = item['bag'][0]
             init_amount = item[1]
@@ -203,10 +203,9 @@ class 상점(commands.Cog):
             final_amount = init_amount - amount
             if final_amount == 0:
                 await db.remove_item(user.id, name)
-                await db.update_bank(user.id, u_bal + price)
             else:
                 await db.edit_item(user.id, index, final_amount)
-                await db.update_bank(user.id, u_bal + price)
+            await db.add_bank(user.id, price)
             await ctx.send(f"{name} {amount}개를 판매하였습니다. 총 {price} ZEN을 드리겠습니다.")
         else:
             await ctx.send("없는 물건은 못 팝니다.")
@@ -237,7 +236,7 @@ class 상점(commands.Cog):
             await ctx.send(f"은행에 충분한 ZEN이 없습니다. 총 가격은 {price} ZEN 입니다.")
             return
 
-        await db.update_bank(ctx.author.id, u_bal - price)
+        await db.add_bank(ctx.author.id, -price)
 
         for x in bag['bag']:
             if x[0] == item:
@@ -357,7 +356,7 @@ class 상점(commands.Cog):
             defense = round(item[2]['def'] * 1.1)
             health = round(item[2]['health'] * 1.1)
 
-            await db.update_bank(user.id, u_bal - upPrice)
+            await db.add_bank(user.id, -upPrice)
             if random.random() <= (upProbability / 100):
                 await db.ecobag.update_one({"id": user.id}, {
                     "$inc": {f"bag.{index}.2.강화": 1, f"bag.{index}.2.강화 성공": 1, f"bag.{index}.2.강화 시도": 1},
@@ -365,12 +364,10 @@ class 상점(commands.Cog):
                              f"bag.{index}.2.health": health}})
 
                 await ctx.send(f'강화 성공! {user.mention}의 {name}이 {total_up + 1}강이 되었습니다.')
-                return
             else:
                 await db.ecobag.update_one({"id": user.id}, {
                     "$inc": {f"bag.{index}.2.강화 시도": 1}})
                 await ctx.send(f'강화 실패! {user.mention}의 {name}이 여전히 {total_up}강 입니다.')
-                return
         else:
             await ctx.send('가방에 없는 아이템 입니다.')
 

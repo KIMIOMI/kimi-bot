@@ -14,6 +14,7 @@ class Db():
 
         nest_asyncio.apply()
         mongo_url = mongo_data['mongo']
+        self.bot_id = mongo_data['bot_id']
         cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
         self.market = Market()
         self.ecomoney = cluster["aoz"]["money"]
@@ -25,9 +26,11 @@ class Db():
 
     async def open_account(self, id: int):
         new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": [],
-                    "gm_time": datetime.datetime.utcnow() - datetime.timedelta(days=1, hours=1)}
+                    "gm_time": datetime.datetime.utcnow() - datetime.timedelta(days=1, hours=1),
+                    "tw_time": datetime.datetime.utcnow() - datetime.timedelta(days=1, hours=1)}
         # wallet = current money, bank = money in bank
         await self.ecomoney.insert_one(new_user)
+        await self.ecomoney.update_one({"id": self.bot_id }, {"$inc": {"bank": -100}})
 
     async def open_bag(self, id: int):
         if id is not None:
@@ -50,13 +53,20 @@ class Db():
         if id is not None:
             await self.ecomoney.update_one({"id": id}, {"$set": {"bank": bank}})
 
+    async def add_bank(self, id: int, amount: int):
+        if id is not None:
+            await self.ecomoney.update_one({"id": id}, {"$inc": {"bank": amount}})
+            await self.ecomoney.update_one({"id": self.bot_id }, {"$inc": {"bank": -amount}})
+
     async def add_wallet(self, id: int, amount: int):
         if id is not None:
             await self.ecomoney.update_one({"id": id}, {"$inc": {"wallet": amount}})
+            await self.ecomoney.update_one({"id": self.bot_id}, {"$inc": {"wallet": -amount}})
 
     async def add_land(self, id: int, amount: int):
         if id is not None:
-            await self.ecomoney.update_one({"id": id}, {"$inc": {"wallet": amount}})
+            await self.ecomoney.update_one({"id": id}, {"$inc": {"land": amount}})
+            await self.ecomoney.update_one({"id": self.bot_id}, {"$inc": {"land": -amount}})
 
     async def arm_weapon(self, id: int, name, up, att, defense, hp):
         if id is not None:

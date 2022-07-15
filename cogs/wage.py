@@ -46,7 +46,7 @@ class 돈벌이(commands.Cog):
             for role in ctx.author.roles:
                 if role.id == 950253891491102770:
                     amount = 100
-            await db.ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"bank": +amount}})
+            await db.add_bank(ctx.author.id, +amount)
             await db.ecomoney.update_one({"id": ctx.author.id}, {"$set": {"gm_time": datetime.datetime.utcnow()}})
             await ctx.send(f'{ctx.author.mention} 에게 {amount} ZEN을 지급했습니다.')
         except Exception as e:
@@ -78,7 +78,7 @@ class 돈벌이(commands.Cog):
             for role in ctx.author.roles:
                 if role.id == 950253891491102770:
                     amount = 100
-            await db.ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"bank": +amount}})
+            await db.add_bank(ctx.author.id, +amount)
             await db.ecomoney.update_one({"id": ctx.author.id}, {"$set": {"tw_time": createdAt}})
             await ctx.send(f'{ctx.author.mention} 에게 {amount} ZEN을 지급했습니다.')
         except Exception as e:

@@ -47,11 +47,11 @@ class 게임(commands.Cog):
             else:
                 num = random.randint(1, 100)
                 if num <= 50:
-                    await db.ecomoney.update_one({"id": ctx.author.id},
-                                                 {"$inc": {"wallet": +int(round(amount / 2, 0))}})
-                    await ctx.send(f'당신이 승리해 AOZ 에게서 {int(round(amount / 2, 0))} ZEN을 빼앗았습니다. 후…. 봐줬다.')
+                    win_amount = int(round(amount / 2, 0))
+                    await db.add_wallet(ctx.author.id, +win_amount)
+                    await ctx.send(f'당신이 승리해 AOZ 에게서 {win_amount} ZEN을 빼앗았습니다. 후…. 봐줬다.')
                 else:
-                    await db.ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
+                    await db.add_wallet(ctx.author.id, -amount)
                     await ctx.send(f'당신이 패배해 AOZ가 {amount} ZEN을 가져갔습니다. 메렁😋')
         except Exception as e:
             print("!배팅", e)
@@ -83,13 +83,13 @@ class 게임(commands.Cog):
                     else:
                         amount = amount
                         result = f"당신은 AOZ에게서 {amount} ZEN을 강탈했습니다. AOZ가 분노한다👿"
-                    await db.ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +(amount)}})
+                    await db.add_wallet(ctx.author.id, +amount)
                     _color = 0xFF0000
                 elif user_dice == robot_dice:
                     result = f"당신의 {amount} ZEN을 AOZ가 강탈하지 못했습니다. AOZ한테 삥뜯으려면 다시 ㄱㄱ🤡"
                     _color = 0xFAFA00
                 else:
-                    await db.ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
+                    await db.add_wallet(ctx.author.id, -amount)
                     result = f'당신은 AOZ에게 {amount} Zen을 강탈당했습니다. 약 오르지? 메렁😋'
                     _color = 0x00FF56
 
@@ -137,11 +137,11 @@ class 게임(commands.Cog):
                         else:
                             amount = amount
                             result = f"당신은 AOZ에게 이겼다! (보상 : {amount})"
-                        await db.ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": +amount}})
+                        await db.add_wallet(ctx.author.id, +amount)
                         _color = 0xFF0000
                     else:
                         result = f'당신은 AOZ에게 졌다!'
-                        await db.ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"wallet": -amount}})
+                        await db.add_wallet(ctx.author.id, -amount)
                         _color = 0x00FF56
 
                     embed = discord.Embed(title="가위바위보 게임 결과!", description="누가 누가 이겼을까? 돈놓고 돈먹기 가즈앗!", color=_color)

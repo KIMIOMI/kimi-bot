@@ -85,7 +85,7 @@ class 사냥(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["사냥터"], db.channel_data["주막"], db.channel_data["무기상점"])
+    @is_channel(db.channel_data["사냥터"], db.channel_data["주막"], db.channel_data["무기상점"], db.channel_data["강화"])
     async def 프로필(self, ctx, user: discord.Member = None):
         """ 유저의 스탯을 확인합니다. (!프로필)
          """
@@ -169,7 +169,7 @@ class 사냥(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["사냥터"], db.channel_data["무기상점"])
+    @is_channel(db.channel_data["사냥터"], db.channel_data["무기상점"], db.channel_data["강화"])
     async def 착용(self, ctx, *, name: str = None):
         """ 무기를 착용합니다. (!착용 "아이템 명")
         """
@@ -213,7 +213,7 @@ class 사냥(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["사냥터"], db.channel_data["무기상점"])
+    @is_channel(db.channel_data["사냥터"], db.channel_data["무기상점"], db.channel_data["강화"])
     async def 해제(self, ctx):
         """ 착용 중인 무기를 해제 합니다. (!착용 "아이템 명")
         """
@@ -262,7 +262,7 @@ class 사냥(commands.Cog):
             if u_hp > user_profile['health']:
                 u_hp = user_profile['health']
             await db.update_user_current_hp(user.id, u_hp)
-            await db.update_wallet(user.id, user_wallet - 20)
+            await db.add_wallet(user.id, -20)
             await ctx.send(f"{user.mention}의 체력이 회복되었습니다"
                            f"현재 체력은 {u_hp} 입니다.")
 

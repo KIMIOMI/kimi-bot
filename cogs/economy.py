@@ -91,14 +91,13 @@ class 돈(commands.Cog):
                                 print(server)
                                 await db.ecoinfo.update_one(server,
                                                          {"$set": {"message_counter": message_counter, "event": False}})
-                                await db.ecomoney.update_one({"id": message.author.id},
-                                                          {"$inc": {"wallet": +event_amount}})
+                                await db.add_wallet(message.author.id, +event_amount)
                                 await message.channel.send(f'축하합니다. {message.author}가 {event_amount} ZEN을 획득하였습니다.')
                     else:
                         if str(message.content) == "줍기":
                             await db.ecoinfo.update_one(server,
                                                      {"$set": {"message_counter": message_counter, "event": False}})
-                            await db.ecomoney.update_one({"id": message.author.id}, {"$inc": {"wallet": +event_amount}})
+                            await db.add_wallet(message.author.id, +event_amount)
                             await message.channel.send(f'축하합니다. {message.author}가 {event_amount} ZEN을 획득하였습니다.')
                 else:
                     await db.ecoinfo.update_one(server, {"$set": {"message_counter": message_counter}})
@@ -190,15 +189,18 @@ class 돈(commands.Cog):
             await ctx.send('자기자신을 강탈 할 순 없습니다.')
         else:
             try:
-                await db.update_user(ctx.author.id)
-                await db.update_user(user.id)
-                user_bal = await db.ecomoney.find_one({"id": user.id})
-                member_bal = await db.ecomoney.find_one({"id": ctx.author.id})
+                member_bal = await db.update_user(ctx.author.id)
+                user_bal = await db.update_user(user.id)
                 mem_bank = member_bal["wallet"]
                 user_bank = user_bal["wallet"]
                 if mem_bank < 500:
                     await ctx.send('자신의 봇짐을 비운채 남을 강탈할 수 없습니다.(최소 500 ZEN)')
-                elif mem_bank >= 500:
+                else:
+                    if user.id == db.bot_id:
+                        await ctx.send(f'{ctx.author.mention}, 감히 나를 강탈하려 하다니! 100 ZEN을 강탈하겠습니다!')
+                        await db.add_wallet(ctx.author.id, -100)
+                        return
+
                     if user_bank < 100:
                         await ctx.send('상대의 봇짐에 충분한 돈이 들어있지 않습니다.(최소 100 ZEN)')
                     elif user_bank >= 100:
@@ -281,15 +283,13 @@ class 돈(commands.Cog):
     async def 지급(self, ctx, user: discord.Member, amount: int):
         """ 유저에게 ZEN을 지급합니다.(관리자용) (!지급 [유저명] [수량]) """
         try:
-            await db.update_user(user.id)
-            user_bal = await db.ecomoney.find_one({"id": user.id})
-            user_bank = user_bal["bank"]
+            user_bal = await db.update_user(user.id)
             if amount <= 0:
                 await ctx.send('0 ZEN 이상 수량을 입력해 주세요.')
             elif amount >= 10000:
                 await ctx.send('1회 최대 10,000 ZEN 지급 가능합니다.')
             else:
-                await db.ecomoney.update_one({"id": user.id}, {"$inc": {"bank": +amount}})
+                await db.add_wallet(user.id, +amount)
                 await ctx.send(f'{user.mention} 에게 {amount} ZEN을 지급했습니다.')
         except Exception as e:
             print("!지급", e)
@@ -302,12 +302,20 @@ class 돈(commands.Cog):
     async def 몰수(self, ctx, user: discord.Member):
         """ 유저의 모든 재산을 몰수합니다.(관리자용) (!몰수 [유저명]) """
         try:
+            user_bal = await db.update_user(user.id)
+            user_bank = user_bal["bank"]
+            user_wallet = user_bal["wallet"]
+            user_land = user_bal["land"]
+            await db.add_bank(user.id, -user_bank)
+            await db.add_wallet(user.id, -user_wallet)
+            await db.add_land(user.id, -user_land)
             await db.ecomoney.delete_one({"id": user.id})
             await db.ecobag.delete_one({"id": user.id})
             await db.ecouser.delete_one({"id": user.id})
-            await db.update_user(user.id)
-            await db.update_battle_user(user.id)
-            await db.update_bag(user.id)
+
+            # await db.update_user(user.id)
+            # await db.update_battle_user(user.id)
+            # await db.update_bag(user.id)
             await ctx.send(f"{user.mention}에게서 모든 자산을 몰수하였습니다. !!")
 
         except Exception as e:

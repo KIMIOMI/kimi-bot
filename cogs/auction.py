@@ -42,7 +42,7 @@ class 경매(commands.Cog):
                 self.auction_str = "현재 입찰자가 없습니다."
                 self.auction_name = ""
                 return
-            await db.update_bank(self.bid_user.id, user_bal["bank"] - self.bid_money)
+            await db.add_bank(self.bid_user.id, -self.bid_money)
             await ctx.send(f"축하합니다! {self.bid_user.mention}님이 `{self.auction_name}`을 {self.bid_money}에 낙찰 받으셨습니다!")
         else:
             await ctx.send("아쉽지만 아무도 낙찰 받지 못하였습니다!")

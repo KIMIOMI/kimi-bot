@@ -49,8 +49,8 @@ class 땅(commands.Cog):
                 await ctx.send("은행에 돈이 부족합니다.")
                 return
 
-            await db.ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"bank": -price}})
-            await db.ecomoney.update_one({"id": ctx.author.id}, {"$inc": {"land": amount}})
+            await db.add_bank(ctx.author.id, -price)
+            await db.add_land(ctx.author.id, amount)
             await ctx.send(f"축하합니다! 당신이 {price} ZEN을 이용해 마하드비파 영토 {amount}평을 구매했습니다. 구웃~👍 추매 해서 땅부자가 되보자!")
         except Exception as e:
             print("!땅구매", e)
