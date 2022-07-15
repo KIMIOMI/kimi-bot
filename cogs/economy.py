@@ -88,7 +88,6 @@ class 돈(commands.Cog):
                     if (time_now - event_occurred_time).total_seconds() < 10:
                         if str(message.author) == str(event_owner):
                             if str(message.content) == "줍기":
-                                print(server)
                                 await db.ecoinfo.update_one(server,
                                                          {"$set": {"message_counter": message_counter, "event": False}})
                                 await db.add_wallet(message.author.id, +event_amount)
@@ -260,12 +259,9 @@ class 돈(commands.Cog):
 
                 if number_of_selected_member > number_of_member:
                     number_of_selected_member = number_of_member
-                print(number_of_selected_member)
                 split_money = splitMoney(amount, number_of_selected_member)
-                print(split_money)
                 for money in split_money:
                     select_index = random.randint(0, number_of_member - 1)
-                    print(select_index)
                     selected_member = ctx.guild.members[select_index]
 
                     await db.update_user(selected_member.id)

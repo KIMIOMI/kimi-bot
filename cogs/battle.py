@@ -59,7 +59,7 @@ async def hunting(id: int, monster, user):
     while (m_hp * u_hp) > 0:
         m_hp -= round((u_att - m_def)*random.randint(5, 10)/10) if (u_att - m_def) > 0 else random.randint(1, 5)
         u_hp -= round((m_att - u_def)*random.randint(5, 10)/10) if (m_att - u_def) > 0 else random.randint(1, 5)
-        print("{} 라운드 m_hp = {} u_hp = {}".format(round_, m_hp, u_hp))
+        # print("{} 라운드 m_hp = {} u_hp = {}".format(round_, m_hp, u_hp))
         round_ += 1
 
     if m_hp <= 0:
