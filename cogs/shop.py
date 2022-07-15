@@ -1,8 +1,8 @@
 import random
 import discord
+import re
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-import datetime
 from utils.dbctrl import Db
 
 db = Db()
@@ -17,6 +17,18 @@ def is_channel(*channelId):
         return result
 
     return commands.check(predicate)
+
+
+def name_amount_split(input):
+    pattern = re.compile(r' \d+')
+    result1 = re.findall(pattern, input)
+    if len(result1) == 0:
+        return input, 1
+    else:
+        result1 = result1[0]
+    amount = int(result1)
+    name = input.split(result1)[0]
+    return name, amount
 
 
 class 상점(commands.Cog):
@@ -100,8 +112,10 @@ class 상점(commands.Cog):
     @commands.command()
     @cooldown(1, 2, BucketType.user)
     @is_channel(db.channel_data["무기상점"])
-    async def 산다(self, ctx, name: str, amount: int = 1):
-        """ 상점에서 물건을 구입한다. (!산다 [아이템] [수량]) 아이템 명이 띄워쓰기가 있을경우 "" 쌍따옴표로 감싸주세요 """
+    async def 산다(self, ctx, *, name: str):
+        """ 상점에서 물건을 구입한다. (!산다 [아이템] [수량]) """
+        name, amount = name_amount_split(name)
+
         id = ctx.author.id
         if amount <= 0 or amount > 100:
             await ctx.send("한번에 최소 1개에서 최대 100개 까지 구입 가능합니다.")
@@ -148,8 +162,10 @@ class 상점(commands.Cog):
     @commands.command()
     @cooldown(1, 2, BucketType.user)
     @is_channel(db.channel_data["무기상점"])
-    async def 판다(self, ctx, name: str, amount: int = 1):
-        """ 상점에 물건을 70%의 가격으로 판매합니다. (!판다 [아이템] [수량]) 아이템 명이 띄워쓰기가 있을경우 "" 쌍따옴표로 감싸주세요 """
+    async def 판다(self, ctx, *, name: str):
+        """ 상점에 물건을 70%의 가격으로 판매합니다. (!판다 [아이템] [수량]) """
+        name, amount = name_amount_split(name)
+
         user = ctx.author
         user_profile = await db.update_battle_user(user.id)
         armed_weapon = user_profile["armed"]["weapon"]
@@ -237,7 +253,7 @@ class 상점(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["무기상점"], db.channel_data["사냥터"])
+    @is_channel(db.channel_data["무기상점"], db.channel_data["사냥터"], db.channel_data["주막"])
     async def 가방(self, ctx, page: int = 1):
         """ 가방을 확인합니다. (!가방 [페이지수]) 1페이지당 10개의 아이템이 표시됩니다. """
         if page > 7 or page < 1:
@@ -276,8 +292,8 @@ class 상점(commands.Cog):
     @commands.command()
     @cooldown(1, 2, BucketType.user)
     @is_channel(db.channel_data["무기상점"], db.channel_data["사냥터"])
-    async def 템(self, ctx, name: str):
-        """ 자신의 아이템 정보를 확인합니다. (!템 [아이템명]) 아이템 명이 띄워쓰기가 있을경우 "" 쌍따옴표로 감싸주세요 """
+    async def 템(self, ctx, *, name: str):
+        """ 자신의 아이템 정보를 확인합니다. (!템 [아이템명]) """
         bag = await db.update_bag(ctx.author.id)
         if bag is None:
             await ctx.send("문제 발생! 관리자에게 문의 하세요")
@@ -307,8 +323,8 @@ class 상점(commands.Cog):
     @commands.command()
     @cooldown(1, 2, BucketType.user)
     @is_channel(db.channel_data["무기상점"])
-    async def 강화(self, ctx, name: str):
-        """ 아이템을 강화 합니다. (!강화 [아이템명]) 아이템 명이 띄워쓰기가 있을경우 "" 쌍따옴표로 감싸주세요 """
+    async def 강화(self, ctx, *, name: str):
+        """ 아이템을 강화 합니다. (!강화 [아이템명]) """
         user = ctx.author
         user_profile = await db.update_battle_user(user.id)
         armed_weapon = user_profile["armed"]["weapon"]

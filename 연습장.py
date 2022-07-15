@@ -322,12 +322,28 @@ def weapon_split(name:str):
     num = b[0]
     print(weapon_name, num)
 
-upProbability = 10
-success = 0
-for i in range(1, 1000):
-    if random.random() <= (upProbability / 100):
-        success += 1
-print(success/1000)
+def up():
+    upProbability = 10
+    success = 0
+    for i in range(1, 1000):
+        if random.random() <= (upProbability / 100):
+            success += 1
+    print(success/1000)
+
+def re_use(name):
+    # amount = re.findall(r'\d+', name)
+    # name = name.split(amount)[0]
+    # pattern = re.compile(r'[ㄱ-ㅣ가-힣]+ \d+\ ')
+    pattern = re.compile(r' \d+')
+    result1 = re.findall(pattern, name)
+    if len(result1) == 0:
+        return
+    amount = int(result1)
+    name = name.split(result1)[0]
+    print(name)
+    print(amount)
+
+re_use('이순신의별운검 -2')
 #
 # a = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']
 # a = list(map(int, a))

@@ -170,8 +170,8 @@ class 사냥(commands.Cog):
     @commands.command()
     @cooldown(1, 2, BucketType.user)
     @is_channel(db.channel_data["사냥터"], db.channel_data["무기상점"])
-    async def 착용(self, ctx, name: str = None):
-        """ 무기를 착용합니다. (!착용 "아이템 명") 띄어 쓰기가 있는 아이템은 쌍 따옴표로 감싸주세요!
+    async def 착용(self, ctx, *, name: str = None):
+        """ 무기를 착용합니다. (!착용 "아이템 명")
         """
 
         try:
