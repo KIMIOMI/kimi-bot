@@ -57,7 +57,7 @@ class 돈벌이(commands.Cog):
     @cooldown(1, 2, BucketType.user)
     @is_channel(db.channel_data["출석"])
     async def 트윗(self, ctx, link: str):
-        """ 트윗을 올려 인증 후 ZEN을 지급 받습니다.(!트윗 [링크]) """
+        """ 트윗을 올려 인증 후 ZEN을 지급 받습니다.(!트윗 [링크]) 인증을 위해서 #AOZ #AgeOfZen #Zenisyou @Age_Of_Zen 의 태그가 있어야 합니다. """
         try:
             await db.update_user(ctx.author.id)
             eco = await db.ecomoney.find_one({"id": ctx.author.id})
