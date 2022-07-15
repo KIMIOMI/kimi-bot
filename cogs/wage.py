@@ -70,7 +70,7 @@ class 돈벌이(commands.Cog):
             createdAt = datetime.datetime.strptime(createdAt, "%Y-%m-%dT%H:%M:%S.%fZ")
 
             if tw_time is not None:
-                if (createdAt - tw_time).total_seconds() < 10:
+                if (createdAt - tw_time).total_seconds() < 7200:
                     await ctx.send("2시간이 지난 새로운 트윗이 없습니다. 새로운 트윗이 있다면 글자 수, 해시태그를 다시 확인해 주세요")
                     return
 
