@@ -31,8 +31,11 @@ class 경매(commands.Cog):
 
     async def auction_loop(self, ctx, end_time):
         for i in range(0, end_time):
-            await asyncio.sleep(60)
+            await asyncio.sleep(2)
+            if self.auction_name == "":
+                return
             await ctx.send(f"`{self.auction_name}` 경매진행 {i + 1}분 경과! {self.auction_str}")
+
         if self.bid_user != "":
             user_bal = await db.update_user(self.bid_user.id)
             if user_bal["bank"] < self.bid_money:
@@ -107,6 +110,27 @@ class 경매(commands.Cog):
 
         except Exception as e:
             print("!입찰", e)
+            await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
+
+    @commands.command()
+    @cooldown(1, 2, BucketType.user)
+    @is_channel(db.channel_data["경매장"])
+    async def 경매중지(self, ctx):
+        """ 경매를 중지합니다. (!경매중지) """
+        try:
+            if self.bid_money == 0:
+                await ctx.send("현재 진행중인 경매가 없습니다.")
+                return
+
+            self.bid_money = 0
+            self.bid_user = ""
+            self.auction_str = "현재 입찰자가 없습니다."
+            self.auction_name = ""
+            await ctx.send("경매가 중지 되었습니다!")
+
+
+        except Exception as e:
+            print("!경매중지", e)
             await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
 
