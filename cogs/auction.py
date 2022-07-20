@@ -104,7 +104,7 @@ class 경매(commands.Cog):
 
             self.bid_user = ctx.author
             self.bid_money = bid
-            self.auction_str = f"{ctx.author.mention}님이 {bid} ZEN에 입찰하였습니다!"
+            self.auction_str = f"{ctx.author.name}님이 {bid} ZEN에 입찰하였습니다!"
 
             await ctx.send(self.auction_str)
 
