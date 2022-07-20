@@ -31,7 +31,7 @@ class 경매(commands.Cog):
 
     async def auction_loop(self, ctx, end_time):
         for i in range(0, end_time):
-            await asyncio.sleep(2)
+            await asyncio.sleep(60)
             if self.auction_name == "":
                 return
             await ctx.send(f"`{self.auction_name}` 경매진행 {i + 1}분 경과! {self.auction_str}")
