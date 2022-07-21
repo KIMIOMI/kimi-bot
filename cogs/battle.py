@@ -54,7 +54,7 @@ def battle(opponent, user):
         o_hp -= round((u_att - o_def) * random.randint(5, 10) / 10) if (u_att - o_def) > 0 else random.randint(1, 5)
         u_hp -= round((o_att - u_def) * random.randint(5, 10) / 10) if (o_att - u_def) > 0 else random.randint(1, 5)
         round_ += 1
-        print("{} 라운드 m_hp = {} u_hp = {}".format(round_, o_hp, u_hp))
+        # print("{} 라운드 m_hp = {} u_hp = {}".format(round_, o_hp, u_hp))
 
     return round_, o_hp, u_hp
 
