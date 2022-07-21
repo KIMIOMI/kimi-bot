@@ -99,7 +99,7 @@ def twitter_check(link):
         url = tu.create_user_timeline_url(user_id)
         json_response = tu.connect_to_endpoint(url[0], headers, url[1])
         tweets = json_response["data"]
-
+        print(tweets)
         for tweet in tweets:
             text = tweet["text"]
             id = tweet["id"]

@@ -15,6 +15,7 @@ class Db():
         nest_asyncio.apply()
         mongo_url = mongo_data['mongo']
         self.bot_id = mongo_data['bot_id']
+        self.holder_role = mongo_data['holder_role']
         cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
         self.market = Market()
         self.ecomoney = cluster["aoz"]["money"]
@@ -23,6 +24,7 @@ class Db():
         self.ecoinfo = cluster["aoz"]["info"]
         self.key = ["id", "wallet", "bank", "land", "wage", "inventory", "gm_time", "tw_time"]
         self.userkey = ["id", "level", "exp", "current_hp", "armed", "att", "def", "health", "skill", "title"]
+        self.upgrade_item_key = ["강화", "강화 성공", "강화 시도", "att", "def", "health", "강화확률", "강화비용", "내구도"]
 
     async def open_account(self, id: int):
         new_user = {"id": id, "wallet": 0, "bank": 100, "land": 0, "wage": 0, "inventory": [],
@@ -160,18 +162,25 @@ class Db():
 
     async def update_upgrade_item(self, id: int, name: str):
         bag = await self.update_bag(id)
-        price, upPrice, upProbability, att, defense, health, image, _bool = self.market.item(name)
-        if _bool is False:
-            return None, 0
 
         for x in bag['bag']:
             if x[0] == name:
                 index = bag['bag'].index(x)
-                if len(x) < 3:
-                    json_items = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att,
-                                  "def": defense, "health": health, "강화확률": upProbability,
-                                  "강화비용": upPrice}
-                    await self.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2": json_items}})
+                # if len(x) < 3:
+                #     price, upPrice, upProbability, att, defense, health, image, _bool = self.market.item(name)
+                #     if _bool is False:
+                #         return None, 0
+                #     json_items = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att,
+                #                   "def": defense, "health": health, "강화확률": upProbability,
+                #                   "강화비용": upPrice, "내구도": 100}
+                #     await self.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2": json_items}})
+                for key in self.upgrade_item_key:
+                    if key in x[2]:
+                        pass
+                    else:
+                        if key == "내구도":
+                            val = 100
+                        await self.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2.{key}": val}})
                 return await self.ecobag.find_one({"id": id}, {"_id": 0, f"bag": {"$slice": [index, 1]}}), index
         return None, 0
 
@@ -182,7 +191,7 @@ class Db():
             if _bool is not False:
                 item_status = {"강화": 0, "강화 성공": 0, "강화 시도": 0, "att": att,
                                "def": defense, "health": health, "강화확률": upProbability,
-                               "강화비용": upPrice}
+                               "강화비용": upPrice, "내구도": 100}
                 await self.ecobag.update_one({"id": id}, {"$push": {"bag": [item, amount, item_status]}})
 
     # function to edit amount of item in ecobag

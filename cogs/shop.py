@@ -305,6 +305,7 @@ class 상점(commands.Cog):
             upProbability = item[2]["강화확률"]
             upPrice = item[2]["강화비용"]
             total_up = item[2]["강화"]
+            durability = item[2]["내구도"]
             image = db.market.item(name)[6]
             embed = discord.Embed(
                 title=f'{ctx.author.name}의 {name}({total_up}강)',
@@ -312,9 +313,12 @@ class 상점(commands.Cog):
             )
 
             embed.set_thumbnail(url=image)
-            embed.add_field(name="Stats", value=stats, inline=False)
-            embed.add_field(name="강화확률", value=f'{upProbability}%', inline=True)
+            embed.add_field(name="Stats", value=stats, inline=True)
+            embed.add_field(name="내구도", value=f'{durability}', inline=True)
+            embed.add_field(name = chr(173), value = chr(173))
+            embed.add_field(name="강화확률", value=f'{upProbability}%')
             embed.add_field(name="강화비용", value=f'{upPrice} ZEN', inline=True)
+
             await ctx.send(embed=embed)
         else:
             await ctx.send('가방에 없는 아이템 입니다.')
@@ -371,6 +375,48 @@ class 상점(commands.Cog):
         else:
             await ctx.send('가방에 없는 아이템 입니다.')
 
+    @commands.command()
+    @cooldown(1, 2, BucketType.user)
+    @is_channel(db.channel_data["무기상점"], db.channel_data["강화"])
+    async def 합성(self, ctx, *, name: str):
+        """ 아이템을 합성 합니다. (!합성 [아이템명]) """
+        user = ctx.author
+        user_profile = await db.update_battle_user(user.id)
+        armed_weapon = user_profile["armed"]["weapon"]
+        armed_weapon_name = db.market.armed_weapon_name_split(armed_weapon)
+        if armed_weapon_name == name:
+            await ctx.send("착용 하고 있는 아이템은 합성 할 수 없습니다.")
+            return
+        bag = await db.update_bag(user.id)
+        if bag is None:
+            await ctx.send("문제 발생! 관리자에게 문의 하세요")
+        item, index = await db.update_upgrade_item(user.id, name)
+
+        _, upPrice, upProbability, _, _, _, image, _bool = db.market.item(name)
+
+        if _bool is False:
+            await ctx.send("없는 아이템 입니다.")
+            return
+
+        if item is not None:
+            item = item['bag'][0]
+            init_amount = item[1]
+            total_up = item[2]['강화']
+            att = round(item[2]['att'] * 1.1)
+            defense = round(item[2]['def'] * 1.1)
+            health = round(item[2]['health'] * 1.1)
+            if init_amount >= 2:
+                await db.ecobag.update_one({"id": user.id}, {
+                    "$inc": {f"bag.{index}.1": -1, f"bag.{index}.2.강화": 1, f"bag.{index}.2.강화 성공": 1, f"bag.{index}.2.강화 시도": 1},
+                    "$set": {f"bag.{index}.2.att": att, f"bag.{index}.2.def": defense,
+                             f"bag.{index}.2.health": health}})
+
+                await ctx.send(f'합성 성공! {user.mention}의 {name}이 {total_up + 1}강이 되었습니다.')
+            else:
+                await ctx.send(f'합성 실패! {user.mention}의 {name}이 1개 밖에 없어 합성을 할 수 없습니다.')
+        else:
+            await ctx.send('가방에 없는 아이템 입니다.')
+
     # leaderboard
     @commands.command()
     @cooldown(1, 2, BucketType.user)
@@ -397,6 +443,8 @@ class 상점(commands.Cog):
 
         async for x in rankings:
             try:
+                if x["id"] == db.bot_id:
+                    continue
                 temp = ctx.guild.get_member(x["id"])
                 if field == "은행":
                     tb = x["bank"]
@@ -413,8 +461,6 @@ class 상점(commands.Cog):
                     embed.add_field(
                         name=f"{i} : {temp.name}", value=f"{tb}평", inline=False
                     )
-
-
                 i += 1
             except:
                 pass

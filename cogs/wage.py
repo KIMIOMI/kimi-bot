@@ -44,7 +44,7 @@ class 돈벌이(commands.Cog):
 
             amount = 50
             for role in ctx.author.roles:
-                if role.id == 950253891491102770:
+                if role.id == db.holder_role:
                     amount = 100
             await db.add_bank(ctx.author.id, +amount)
             await db.ecomoney.update_one({"id": ctx.author.id}, {"$set": {"gm_time": datetime.datetime.utcnow()}})
@@ -76,7 +76,7 @@ class 돈벌이(commands.Cog):
 
             amount = 50
             for role in ctx.author.roles:
-                if role.id == 950253891491102770:
+                if role.id == db.holder_role:
                     amount = 100
             await db.add_bank(ctx.author.id, +amount)
             await db.ecomoney.update_one({"id": ctx.author.id}, {"$set": {"tw_time": createdAt}})
