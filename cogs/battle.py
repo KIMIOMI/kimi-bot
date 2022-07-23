@@ -2,17 +2,16 @@ import random
 import discord
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-from utils.dbctrl import Db
-
-
-db = Db()
+from utils.dbctrl import db
+from utils.event import event
 
 monster_json = {
     "하급빌런": {'name': '하급 빌런', 'current_hp': 5, 'att': 1, 'def': 1, 'exp': 10, 'reward': 10},
     "중급빌런": {'name': '중급 빌런', 'current_hp': 50, 'att': 20, 'def': 11, 'exp': 100, 'reward': 50},
     "상급빌런": {'name': '상급 빌런', 'current_hp': 500, 'att': 80, 'def': 50, 'exp': 400, 'reward': 200},
-    "빌런대장": {'name': '빌런 대장', 'current_hp': 1000, 'att': 110, 'def': 80, 'exp': 800, 'reward': 400}
+    "빌런대장": {'name': '빌런 대장', 'current_hp': 1000, 'att': 110, 'def': 40, 'exp': 800, 'reward': 400}
 }
+
 
 
 def is_channel(*channelId):
@@ -26,17 +25,18 @@ def is_channel(*channelId):
     return commands.check(predicate)
 
 
-async def add_exp(id : int, level : int, exp_now: int, exp: int, hp: int, total_hp: int):
-        exp_total = exp_now + exp
-        next_exp = round(0.04 * (level ** 3) + 0.8 * (level ** 2) + 2 * level)
-        ## level up
-        if exp_total > next_exp:
-            exp_now = exp_total - next_exp
-            await db.ecouser.update_one({"id": id}, {"$inc": {"level": 1, "att": 2, "def": 2, "health": 20}, "$set": {"exp": exp_now, "current_hp": total_hp + 20}})
-            return True
-        else:
-            await db.ecouser.update_one({"id": id}, {"$set": {"exp": exp_total, "current_hp": hp}})
-            return False
+async def add_exp(id: int, level: int, exp_now: int, exp: int, hp: int, total_hp: int):
+    exp_total = exp_now + exp
+    next_exp = round(0.04 * (level ** 3) + 0.8 * (level ** 2) + 2 * level)
+    ## level up
+    if exp_total > next_exp:
+        exp_now = exp_total - next_exp
+        await db.ecouser.update_one({"id": id}, {"$inc": {"level": 1, "att": 2, "def": 2, "health": 20},
+                                                 "$set": {"exp": exp_now, "current_hp": total_hp + 20}})
+        return True
+    else:
+        await db.ecouser.update_one({"id": id}, {"$set": {"exp": exp_total, "current_hp": hp}})
+        return False
 
 
 def battle(opponent, user):
@@ -59,7 +59,7 @@ def battle(opponent, user):
     return round_, o_hp, u_hp
 
 
-async def hunting(userd : discord.Member, monster, user):
+async def hunting(userd: discord.Member, monster, user):
     id = userd.id
     reward = monster["reward"]
     u_level = user["level"]
@@ -82,7 +82,8 @@ async def hunting(userd : discord.Member, monster, user):
             durability = 100
 
         if durability <= 0:
-            battle_user = {"current_hp": user["current_hp"] - armed_item[2]["health"], "att": user["att"] - armed_item[2]["att"], "def": user["def"] - armed_item[2]["def"]}
+            battle_user = {"current_hp": user["current_hp"] - armed_item[2]["health"],
+                           "att": user["att"] - armed_item[2]["att"], "def": user["def"] - armed_item[2]["def"]}
         else:
             battle_user = user
     else:
@@ -150,7 +151,7 @@ class 사냥(commands.Cog):
             mudrA_role = discord.utils.find(lambda r: r.id == 950255295786016768, ctx.message.guild.roles)
             gItA_role = discord.utils.find(lambda r: r.id == 950255426740568105, ctx.message.guild.roles)
 
-            nation =' '
+            nation = ' '
             if eka_role in user.roles:
                 nation = 'eka(에카, एक)'
             if mudrA_role in user.roles:
@@ -167,7 +168,7 @@ class 사냥(commands.Cog):
             embed.add_field(
                 name="스탯",
                 value=f"공격력: `{user_profile['att']}`\n방어력: `{user_profile['def']}`\n체력: `{user_profile['health']}`"
-           )
+            )
             ment = ''
             for skill in user_profile['skill']:
                 ment += f"{skill['name']} lv:{skill['level']}\n"
@@ -216,7 +217,7 @@ class 사냥(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["사냥터"])
+    @is_channel(db.channel_data["사냥터"], db.channel_data["전투장"])
     async def 전투(self, ctx, opponent: discord.Member):
         """ 전투를 시작합니다. (!전투 [유저])
         """
@@ -241,18 +242,20 @@ class 사냥(commands.Cog):
                 await db.update_user_current_hp(user.id, u_hp)
                 await db.ecomoney.update_one({"id": user.id}, {"$inc": {"wallet": +rob_price}})
                 await db.ecomoney.update_one({"id": opponent.id}, {"$inc": {"wallet": -rob_price}})
-                await ctx.send(f"{user.mention} 님이 승리하였습니다. {opponent.mention} 님의 지갑에 있는 ZEN 중 {rob_price} ZEN을 빼앗았습니다. "
-                               f"\n{user.mention}님의 현재 체력 : {u_hp}"
-                               f"\n{opponent.mention}님의 현재 체력 : 0")
+                await ctx.send(
+                    f"{user.mention} 님이 승리하였습니다. {opponent.mention} 님의 지갑에 있는 ZEN 중 {rob_price} ZEN을 빼앗았습니다. "
+                    f"\n{user.mention}님의 현재 체력 : {u_hp}"
+                    f"\n{opponent.mention}님의 현재 체력 : 0")
             elif u_hp <= 0 < o_hp:
                 rob_price = round(user_wallet * (round_ / 100) * 5)
                 await db.update_user_current_hp(user.id, 0)
                 await db.update_user_current_hp(opponent.id, o_hp)
                 await db.ecomoney.update_one({"id": opponent.id}, {"$inc": {"wallet": +rob_price}})
                 await db.ecomoney.update_one({"id": user.id}, {"$inc": {"wallet": -rob_price}})
-                await ctx.send(f"{opponent.mention} 님이 승리하였습니다. {user.mention} 님의 지갑에 있는 ZEN 중 {rob_price} ZEN을 빼앗았습니다. "
-                               f"\n{opponent.mention}님의 현재 체력 : {o_hp}"
-                               f"\n{user.mention}님의 현재 체력 : 0")
+                await ctx.send(
+                    f"{opponent.mention} 님이 승리하였습니다. {user.mention} 님의 지갑에 있는 ZEN 중 {rob_price} ZEN을 빼앗았습니다. "
+                    f"\n{opponent.mention}님의 현재 체력 : {o_hp}"
+                    f"\n{user.mention}님의 현재 체력 : 0")
             elif u_hp > 0 and o_hp > 0:
                 await db.update_user_current_hp(user.id, u_hp)
                 await db.update_user_current_hp(opponent.id, o_hp)
@@ -279,6 +282,7 @@ class 사냥(commands.Cog):
         try:
             user = ctx.author
             user_profile = await db.update_battle_user(user.id)
+            name = db.market.item_abbreviation(name)
             item, _ = await db.update_upgrade_item(user.id, name)
             armed_weapon = user_profile['armed']['weapon']
             if armed_weapon == '':
@@ -380,12 +384,13 @@ class 사냥(commands.Cog):
         try:
             user = ctx.author
             user_bal = await db.update_user(user.id)
+            name = db.market.item_abbreviation(name)
             item, index = await db.update_upgrade_item(user.id, name)
 
             if item is not None:
                 item = item['bag'][0]
                 durability = item[2]['내구도']
-                price = round(item[2]['강화'] * (100 - item[2]['강화확률']) * (100-durability) / 200)
+                price = round(item[2]['강화'] * (100 - item[2]['강화확률']) * (100 - durability) / 200)
                 if price < 0:
                     price = 10
                 user_bank = user_bal['bank']
@@ -403,6 +408,39 @@ class 사냥(commands.Cog):
         except Exception as e:
             print("!수리 ", e)
             await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
+
+    @commands.command()
+    @cooldown(1, 300, BucketType.user)
+    @is_channel(db.channel_data["사냥터"])
+    async def 보스사냥(self, ctx):
+        """ 보스 레이드에 참가합니다. (!보스사냥) """
+        try:
+            if not event.isboss:
+                await ctx.send("현재 보스레이드 시간이 아닙니다.")
+                return
+
+            user = ctx.author
+            user_profile = await db.update_battle_user(user.id)
+            if user_profile is None:
+                ctx.send("없는 유저입니다.")
+                return
+
+            if user_profile['current_hp'] <= 0:
+                ctx.send('체력이 충분하지 않아 참가할 수 없습니다.')
+                return
+
+            round_, boss_hp, u_hp = battle(event.boss, user_profile)
+            damage = event.boss['current_hp'] - boss_hp
+
+            point = round(damage * (10 + (2 * (11 - round_))) / 10)
+
+            db.ecouser.update_one({"id":user.id}, {"$inc": {"point": point}})
+            await ctx.send(f"보스를 공격합니다 {point} 기여도 포인트 획득!")
+
+        except Exception as e:
+            print("!참가 ", e)
+            await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
+
 
 def setup(bot):
     bot.add_cog(사냥(bot))

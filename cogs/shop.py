@@ -3,9 +3,7 @@ import discord
 import re
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-from utils.dbctrl import Db
-
-db = Db()
+from utils.dbctrl import db
 
 
 def is_channel(*channelId):
@@ -114,6 +112,7 @@ class 상점(commands.Cog):
     async def 산다(self, ctx, *, name: str):
         """ 상점에서 물건을 구입한다. (!산다 [아이템] [수량]) """
         name, amount = name_amount_split(name)
+        name = db.market.item_abbreviation(name)
 
         id = ctx.author.id
         if amount <= 0 or amount > 100:
@@ -137,7 +136,6 @@ class 상점(commands.Cog):
         if u_bal < price:
             await ctx.send(f"은행에 충분한 ZEN이 없습니다. 총 가격은 {price} ZEN 입니다.")
             return
-
 
         item, index = await db.update_upgrade_item(id, name)
 
@@ -165,7 +163,7 @@ class 상점(commands.Cog):
     async def 판다(self, ctx, *, name: str):
         """ 상점에 물건을 70%의 가격으로 판매합니다. (!판다 [아이템] [수량]) """
         name, amount = name_amount_split(name)
-
+        name = db.market.item_abbreviation(name)
         user = ctx.author
         user_profile = await db.update_battle_user(user.id)
         armed_weapon = user_profile["armed"]["weapon"]
@@ -296,6 +294,7 @@ class 상점(commands.Cog):
         bag = await db.update_bag(ctx.author.id)
         if bag is None:
             await ctx.send("문제 발생! 관리자에게 문의 하세요")
+        name = db.market.item_abbreviation(name)
         item, _ = await db.update_upgrade_item(ctx.author.id, name)
 
         if item is not None:
@@ -330,6 +329,7 @@ class 상점(commands.Cog):
         """ 아이템을 강화 합니다. (!강화 [아이템명]) """
         user = ctx.author
         user_profile = await db.update_battle_user(user.id)
+        name = db.market.item_abbreviation(name)
         armed_weapon = user_profile["armed"]["weapon"]
         armed_weapon_name = db.market.armed_weapon_name_split(armed_weapon)
         if armed_weapon_name == name:
@@ -382,6 +382,7 @@ class 상점(commands.Cog):
         """ 아이템을 합성 합니다. (!합성 [아이템명]) """
         user = ctx.author
         user_profile = await db.update_battle_user(user.id)
+        name = db.market.item_abbreviation(name)
         armed_weapon = user_profile["armed"]["weapon"]
         armed_weapon_name = db.market.armed_weapon_name_split(armed_weapon)
         if armed_weapon_name == name:
@@ -417,60 +418,7 @@ class 상점(commands.Cog):
         else:
             await ctx.send('가방에 없는 아이템 입니다.')
 
-    # leaderboard
-    @commands.command()
-    @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["주막"])
-    async def 랭킹(self, ctx, field: str):
-        """ 각종 랭킹을 확인합니다. (!랭킹 [필드명]) 필드 목록 : 은행, 레벨, 토지 """
-        if field == "은행":
-            rankings = db.ecomoney.find().sort("bank", -1)
-        elif field == "레벨":
-            rankings = db.ecouser.find().sort("level", -1)
-        elif field == "토지":
-            rankings = db.ecomoney.find().sort("land", -1)
-        else:
-            await ctx.send("없는 랭킹 입니다!")
-            return
 
-        i = 1
-
-        embed = discord.Embed(
-            title=f"{ctx.guild.name} {field} 랭킹",
-            description=f"\u200b",
-            color=0xFF0000
-        )
-
-        async for x in rankings:
-            try:
-                if x["id"] == db.bot_id:
-                    continue
-                temp = ctx.guild.get_member(x["id"])
-                if field == "은행":
-                    tb = x["bank"]
-                    embed.add_field(
-                        name=f"{i} : {temp.name}", value=f"{tb} ZEN", inline=False
-                    )
-                elif field == "레벨":
-                    tb = x["level"]
-                    embed.add_field(
-                        name=f"{i} : {temp.name}", value=f"레벨: {tb}", inline=False
-                    )
-                elif field == "토지":
-                    tb = x["land"]
-                    embed.add_field(
-                        name=f"{i} : {temp.name}", value=f"{tb}평", inline=False
-                    )
-                i += 1
-            except:
-                pass
-            if i == 11:
-                break
-
-        embed.set_footer(
-            text=f"요청자: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
-        )
-        await ctx.send(embed=embed)
 
 
 def setup(bot):

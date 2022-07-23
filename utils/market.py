@@ -5,6 +5,8 @@ class Market():
     def __init__(self):
         with open('./market.json', encoding='UTF-8') as f:
             self.market_data = json.load(f)
+        with open('./item_abbrev.json', encoding='UTF-8') as f:
+            self.item_abbrev = json.load(f)
 
         self.items = {}
         self.land = self.market_data["Land"]
@@ -16,6 +18,12 @@ class Market():
         for x, item in self.market_data["item"].items():
             i = {x: ["가챠", item['price'], x]}
             self.items.update(i)
+
+    def item_abbreviation(self, name: str):
+        if name in self.item_abbrev.keys():
+            return self.item_abbrev[name]
+        else:
+            return name
 
     def item(self, name):
         if name in self.items.keys():

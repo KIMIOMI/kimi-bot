@@ -1,10 +1,8 @@
 import datetime
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-from utils.dbctrl import Db
+from utils.dbctrl import db
 from utils.twitter_api import twitter_check
-
-db = Db()
 
 
 def is_channel(*channelId):

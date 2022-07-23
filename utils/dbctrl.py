@@ -203,3 +203,6 @@ class Db():
     async def remove_item(self, id: int, name: str):
         if id is not None:
             await self.ecobag.update_one({"id": id}, {"$pull": {"bag": {"$in": [name]}}})
+
+
+db = Db()

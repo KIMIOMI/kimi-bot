@@ -1,10 +1,7 @@
 import asyncio
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-from utils.dbctrl import Db
-
-
-db = Db()
+from utils.dbctrl import db
 
 
 def is_channel(*channelId):
@@ -56,7 +53,7 @@ class 경매(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("Action Cog Loaded Succesfully")
+        print("Auction Cog Loaded Succesfully")
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)

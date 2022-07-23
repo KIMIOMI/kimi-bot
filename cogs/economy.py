@@ -3,9 +3,9 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
 import random
-from utils.dbctrl import Db
-
-db = Db()
+import asyncio
+from utils.dbctrl import db
+from utils.event import event
 
 
 def is_channel(*channelId):
@@ -40,7 +40,11 @@ class 돈(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.rob_event = False
 
+    async def rob_event_loop(self, end_time):
+        for i in range(0, end_time):
+            await asyncio.sleep(60)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -50,6 +54,11 @@ class 돈(commands.Cog):
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
+        if message.channel.id == db.channel_data["사냥터"] or message.channel.id == db.channel_data[
+            "강화"] or message.channel.id == db.channel_data["무기상점"] or message.channel.id == db.channel_data[
+            "도박장"] or message.channel.id == db.channel_data["가위바위보"]:
+            return
+
         # check if the server exists in servers and if not create an entry
         server = await db.ecoinfo.find_one({"_id": message.guild.id})
         if server is None:
@@ -89,13 +98,14 @@ class 돈(commands.Cog):
                         if str(message.author) == str(event_owner):
                             if str(message.content) == "줍기":
                                 await db.ecoinfo.update_one(server,
-                                                         {"$set": {"message_counter": message_counter, "event": False}})
+                                                            {"$set": {"message_counter": message_counter,
+                                                                      "event": False}})
                                 await db.add_wallet(message.author.id, +event_amount)
                                 await message.channel.send(f'축하합니다. {message.author}가 {event_amount} ZEN을 획득하였습니다.')
                     else:
                         if str(message.content) == "줍기":
                             await db.ecoinfo.update_one(server,
-                                                     {"$set": {"message_counter": message_counter, "event": False}})
+                                                        {"$set": {"message_counter": message_counter, "event": False}})
                             await db.add_wallet(message.author.id, +event_amount)
                             await message.channel.send(f'축하합니다. {message.author}가 {event_amount} ZEN을 획득하였습니다.')
                 else:
@@ -103,7 +113,8 @@ class 돈(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["주막"], db.channel_data["무기상점"], db.channel_data["도박장"], db.channel_data["가위바위보"], db.channel_data["부동산"], db.channel_data["강화"])
+    @is_channel(db.channel_data["주막"], db.channel_data["무기상점"], db.channel_data["도박장"], db.channel_data["가위바위보"],
+                db.channel_data["부동산"], db.channel_data["강화"])
     async def 자산(self, ctx, user: discord.Member = None):
         """
             유저의 자산을 확인합니다. 유저명 누락시 본인 (!자산 [유저명])
@@ -140,7 +151,7 @@ class 돈(commands.Cog):
             await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
     @commands.command()
-    @cooldown(1, 2, BucketType.user)
+    @cooldown(1, 300, BucketType.user)
     @is_channel(db.channel_data["주막"])
     async def 인출(self, ctx, amount: int):
         """ 수량만큼의 ZEN을 봇짐으로 인출합니다. (!인출 [수량]) """
@@ -160,7 +171,7 @@ class 돈(commands.Cog):
             await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
     @commands.command()
-    @cooldown(1, 2, BucketType.user)
+    @cooldown(1, 300, BucketType.user)
     @is_channel(db.channel_data["주막"])
     async def 입금(self, ctx, amount: int):
         """ 수량 만큼의 ZEN을 은행으로 입금합니다. (!입금 [수량])"""
@@ -190,27 +201,70 @@ class 돈(commands.Cog):
             try:
                 member_bal = await db.update_user(ctx.author.id)
                 user_bal = await db.update_user(user.id)
+
                 mem_bank = member_bal["wallet"]
                 user_bank = user_bal["wallet"]
+
                 if mem_bank < 500:
                     await ctx.send('자신의 봇짐을 비운채 남을 강탈할 수 없습니다.(최소 500 ZEN)')
-                else:
-                    if user.id == db.bot_id:
-                        await ctx.send(f'{ctx.author.mention}, 감히 나를 강탈하려 하다니! 100 ZEN을 강탈하겠습니다!')
-                        await db.add_wallet(ctx.author.id, -100)
-                        return
+                    return
 
-                    if user_bank < 100:
-                        await ctx.send('상대의 봇짐에 충분한 돈이 들어있지 않습니다.(최소 100 ZEN)')
-                    elif user_bank >= 100:
-                        num = random.randint(1, 100)
-                        f_mem = mem_bank + num
-                        f_user = user_bank - num
-                        await db.update_wallet(ctx.author.id, f_mem)
-                        await db.update_wallet(user.id, f_user)
-                        await ctx.send(f'{ctx.author.mention}이 {user.mention}에게서 {num} ZEN 을 강탈하였다.')
+                if user.id == db.bot_id:
+                    bot_rob = round(mem_bank * 0.1)
+                    await ctx.send(f'{ctx.author.mention}, 감히 나를 강탈하려 하다니! {bot_rob} ZEN을 강탈하겠습니다!')
+                    await db.add_wallet(ctx.author.id, -bot_rob)
+                    return
+
+                if user_bank < 100:
+                    await ctx.send('상대의 봇짐이 텅텅 비었습니다. 거지는 건들이지 맙시다.(최소 100 ZEN)')
+                elif user_bank >= 100:
+                    num = random.randint(1, 100)
+                    f_mem = mem_bank + num
+                    f_user = user_bank - num
+                    await db.update_wallet(ctx.author.id, f_mem)
+                    await db.update_wallet(user.id, f_user)
+                    await ctx.send(f'{ctx.author.mention}이 {user.mention}에게서 {num} ZEN 을 강탈하였습니다.')
+
             except Exception as e:
                 print("!강탈", e)
+                await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
+
+    @commands.command()
+    @cooldown(1, 20, BucketType.user)
+    @is_channel(db.channel_data["주막"])
+    async def 은행털기(self, ctx, user: discord.Member = None):
+        """ 상대의 은행에 있는 돈을 강탈 합니다. 이벤트시 가능 (!은행털기 [유저명]) """
+        if user is None or user.id == ctx.author.id:
+            await ctx.send('자기자신을 털 순 없습니다.')
+        else:
+            try:
+                if not event.rob_event:
+                    await ctx.send("은행을 털 순 없습니다. AOZ의 은행은 지금 굳건합니다.")
+                    return
+
+                member_bal = await db.update_user(ctx.author.id)
+                user_bal = await db.update_user(user.id)
+                mem_bank = member_bal["bank"]
+                user_bank = user_bal["bank"]
+
+                if user.id == db.bot_id:
+                    bot_rob = round(mem_bank * 0.1)
+                    await ctx.send(f'{ctx.author.mention}, 감히 나를 강탈하려 하다니! {bot_rob} ZEN을 강탈하겠습니다!')
+                    await db.add_bank(ctx.author.id, -bot_rob)
+                    return
+
+                if user_bank < 100:
+                    await ctx.send('상대의 계좌가 텅텅 비었습니다. 거지는 건들이지 맙시다.(최소 100 ZEN)')
+                elif user_bank >= 100:
+                    num = random.randint(50, 100)
+                    f_mem = mem_bank + num
+                    f_user = user_bank - num
+                    await db.update_bank(ctx.author.id, f_mem)
+                    await db.update_bank(user.id, f_user)
+                    await ctx.send(f'{ctx.author.mention}이 {user.mention}의 계좌의 {num} ZEN 을 강탈하였다.')
+
+            except Exception as e:
+                print("!은행털기", e)
                 await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
     @commands.command()
@@ -317,6 +371,68 @@ class 돈(commands.Cog):
         except Exception as e:
             print("!몰수", e)
             await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
+
+    # leaderboard
+    @commands.command()
+    @cooldown(1, 2, BucketType.user)
+    @is_channel(db.channel_data["주막"])
+    async def 랭킹(self, ctx, field: str):
+        """ 각종 랭킹을 확인합니다. (!랭킹 [필드명]) 필드 목록 : 은행, 레벨, 토지 기여도"""
+        if field == "은행":
+            rankings = db.ecomoney.find().sort("bank", -1)
+        elif field == "레벨":
+            rankings = db.ecouser.find().sort("level", -1)
+        elif field == "토지":
+            rankings = db.ecomoney.find().sort("land", -1)
+        elif field == "기여도":
+            rankings = db.ecouser.find().sort("point", -1)
+        else:
+            await ctx.send("없는 랭킹 입니다!")
+            return
+
+        i = 1
+
+        embed = discord.Embed(
+            title=f"{ctx.guild.name} {field} 랭킹",
+            description=f"\u200b",
+            color=0xFF0000
+        )
+
+        async for x in rankings:
+            try:
+                if x["id"] == db.bot_id:
+                    continue
+                temp = ctx.guild.get_member(x["id"])
+                if field == "은행":
+                    tb = x["bank"]
+                    embed.add_field(
+                        name=f"{i} : {temp.name}", value=f"{tb} ZEN", inline=False
+                    )
+                elif field == "레벨":
+                    tb = x["level"]
+                    embed.add_field(
+                        name=f"{i} : {temp.name}", value=f"레벨: {tb}", inline=False
+                    )
+                elif field == "토지":
+                    tb = x["land"]
+                    embed.add_field(
+                        name=f"{i} : {temp.name}", value=f"{tb}평", inline=False
+                    )
+                elif field == "기여도":
+                    tb = x["point"]
+                    embed.add_field(
+                        name=f"{i} : {temp.name}", value=f"{tb}포인트", inline=False
+                    )
+                i += 1
+            except:
+                pass
+            if i == 11:
+                break
+
+        embed.set_footer(
+            text=f"요청자: {ctx.author.name}", icon_url=f"{ctx.author.avatar_url}"
+        )
+        await ctx.send(embed=embed)
 
 
 def setup(bot):

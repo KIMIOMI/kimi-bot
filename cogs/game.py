@@ -2,10 +2,7 @@ import random
 import discord
 from discord.ext import commands
 from discord.ext.commands import BucketType, cooldown
-from utils.dbctrl import Db
-
-
-db = Db()
+from utils.dbctrl import db
 
 
 def is_channel(*channelId):
