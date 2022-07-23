@@ -16,6 +16,7 @@ class Db():
         mongo_url = mongo_data['mongo']
         self.bot_id = mongo_data['bot_id']
         self.holder_role = mongo_data['holder_role']
+        self.mention_role = mongo_data['mention_role']
         cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
         self.market = Market()
         self.ecomoney = cluster["aoz"]["money"]
