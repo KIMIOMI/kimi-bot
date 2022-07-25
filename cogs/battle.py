@@ -249,12 +249,13 @@ class 사냥(commands.Cog):
 
             if user_weapon != '':
                 user_weapon_index, user_weapon_durability, battle_user = await weapon_check(user.id, user_weapon, user_profile)
+            else:
+                battle_user = user_profile
 
             if opponent_weapon != '':
                 opponent_weapon_index, opponent_weapon_durability, battle_opponent = await weapon_check(opponent.id, opponent_weapon, opponent_profile)
-
-            battle_user = user_profile
-            battle_opponent = opponent_profile
+            else:
+                battle_opponent = opponent_profile
 
             round_, o_hp, u_hp = battle(battle_opponent, battle_user)
 
@@ -473,16 +474,32 @@ class 사냥(commands.Cog):
                 ctx.send('체력이 충분하지 않아 참가할 수 없습니다.')
                 return
 
-            round_, boss_hp, u_hp = battle(event.boss, user_profile)
+            user_weapon = user_profile["armed"]["weapon"]
+
+            if user_weapon != '':
+                user_weapon_index, user_weapon_durability, battle_user = await weapon_check(user.id, user_weapon,
+                                                                                            user_profile)
+            else:
+                battle_user = user_profile
+                user_weapon_durability = 0
+
+            round_, boss_hp, u_hp = battle(event.boss, battle_user)
+
+            if user_weapon != '':
+                user_weapon_durability -= round_
+                if user_weapon_durability < 0:
+                    user_weapon_durability = 0
+                await db.ecobag.update_one({"id": user.id}, {"$set": {f"bag.{user_weapon_index}.2.내구도": user_weapon_durability}})
+
             damage = event.boss['current_hp'] - boss_hp
 
             point = round(damage * (10 + (2 * (11 - round_))) / 10)
 
             db.ecouser.update_one({"id":user.id}, {"$inc": {"point": point}})
-            await ctx.send(f"보스를 공격합니다 {point} 기여도 포인트 획득!")
+            await ctx.send(f"보스를 공격합니다 {point} 기여도 포인트 획득!\n무기의 내구도가 {user_weapon_durability} 남았습니다.")
 
         except Exception as e:
-            print("!참가 ", e)
+            print("!보스사냥 ", e)
             await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
 

@@ -268,6 +268,44 @@ class 돈(commands.Cog):
                 await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
     @commands.command()
+    @cooldown(1, 20, BucketType.user)
+    @is_channel(db.channel_data["주막"])
+    async def 지갑털기(self, ctx, user: discord.Member = None):
+        """ 상대의 봇짐에 있는 돈을 강탈 합니다. 이벤트시 가능 (!지갑털기 [유저명]) """
+        if user is None or user.id == ctx.author.id:
+            await ctx.send('자기자신을 털 순 없습니다.')
+        else:
+            try:
+                if not event.rob_event:
+                    await ctx.send("지급은 천재 지변 상황이 아닙니다. 평소에는 강탈을 사용하세요")
+                    return
+
+                member_bal = await db.update_user(ctx.author.id)
+                user_bal = await db.update_user(user.id)
+                mem_bank = member_bal["wallet"]
+                user_bank = user_bal["wallet"]
+
+                if user.id == db.bot_id:
+                    bot_rob = round(mem_bank * 0.1)
+                    await ctx.send(f'{ctx.author.mention}, 감히 나를 강탈하려 하다니! {bot_rob} ZEN을 강탈하겠습니다!')
+                    await db.add_bank(ctx.author.id, -bot_rob)
+                    return
+
+                if user_bank < 100:
+                    await ctx.send('상대의 봇짐이 텅텅 비었습니다. 거지는 건들이지 맙시다.(최소 100 ZEN)')
+                elif user_bank >= 100:
+                    num = random.randint(50, 100)
+                    f_mem = mem_bank + num
+                    f_user = user_bank - num
+                    await db.update_wallet(ctx.author.id, f_mem)
+                    await db.update_wallet(user.id, f_user)
+                    await ctx.send(f'{ctx.author.mention}이 {user.mention}의 봇짐의 {num} ZEN 을 강탈하였다.')
+
+            except Exception as e:
+                print("!지갑털기 ", e)
+                await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
+
+    @commands.command()
     @cooldown(1, 2, BucketType.user)
     @is_channel(db.channel_data["주막"])
     async def 송금(self, ctx, user: discord.Member, amount: int):

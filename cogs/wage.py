@@ -62,7 +62,7 @@ class 돈벌이(commands.Cog):
             tw_time = eco['tw_time']
             result, createdAt = twitter_check(link)
             if result is False:
-                await ctx.send("트윗 글자수, 해시태그, 혹은 링크를 다시 확인해주세요")
+                await ctx.send("트윗 글자수, 해시태그, 혹은 링크를 다시 확인해주세요(트윗 글이 오래 되면 검색이 안될 수도 있으니 가급적 바로 올린 트윗을 인증해주세요!")
                 return
 
             createdAt = datetime.datetime.strptime(createdAt, "%Y-%m-%dT%H:%M:%S.%fZ")

@@ -1,3 +1,4 @@
+import asyncio
 import random
 import discord
 from discord.ext import commands
@@ -152,6 +153,23 @@ class 게임(commands.Cog):
             print("!가바보", e)
             await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
+    @commands.command()
+    @cooldown(1, 2, BucketType.user)
+    @is_channel(db.channel_data["도박장"], db.channel_data["주막"])
+    async def 스피드퀴즈(self, ctx, time: float):
+        """ 스피드 퀴즈 게임을 시작합니다. (!스피드퀴즈 [url]) """
+        try:
+            if time < 0.1:
+                await ctx.message.delete()
+                await ctx.send(f"{ctx.author.mention} 너무 빨라요")
+                return
+            await asyncio.sleep(time)
+            await ctx.message.delete()
+            # message = await ctx.send("https://pds.joongang.co.kr/news/component/htmlphoto_mmdata/202206/06/5de9ae40-2b1b-4d10-8ae4-6430c450c9f2.jpg")
+            await ctx.send("뭘까요?")
+        except Exception as e:
+            print("!가바보", e)
+            await ctx.send('취..익 취이..ㄱ 관리자를 불러 나를 고쳐주세요')
 
 def setup(bot):
     bot.add_cog(게임(bot))

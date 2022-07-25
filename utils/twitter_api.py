@@ -57,7 +57,15 @@ class twitter_util():
         query_params = {
             'tweet.fields': 'created_at',
             'user.fields': 'created_at',
-            'max_results': 5,
+            'max_results': 30,
+        }
+        return url, query_params
+
+    def create_single_tweet_url(self, tweet_id):
+        # Replace with tweet ID below
+        url = "https://api.twitter.com/2/tweets?ids={}".format(tweet_id)
+        query_params = {
+            'user.fields': 'id,name,username,created_at,description,public_metrics,verified',
         }
         return url, query_params
 
@@ -88,9 +96,16 @@ class twitter_util():
 def twitter_check(link):
     try:
         link = urlparse(link)
-        username = link.path.split('/')[1]
+        link_split = link.path.split('/')
+        username = link_split[1]
+        tweet_id = link_split[3]
+
         tu = twitter_util()
         headers = tu.create_headers()
+
+        # url = tu.create_single_tweet_url(id)
+        # json_response = tu.connect_to_endpoint(url[0], headers, url[1])
+        # tweets = json_response["data"]
 
         url = tu.create_get_user_url(username)
         json_response = tu.connect_to_endpoint(url[0], headers, url[1])
@@ -99,22 +114,25 @@ def twitter_check(link):
         url = tu.create_user_timeline_url(user_id)
         json_response = tu.connect_to_endpoint(url[0], headers, url[1])
         tweets = json_response["data"]
-        # print(tweets)
+
+        print(tweets)
         for tweet in tweets:
             text = tweet["text"]
             id = tweet["id"]
             created_at = tweet["created_at"]
-            tweethashTags = re.findall(r"#(\w+)", text)
-            hashResult = True
-            for hashtag in tu.hashTags:
-                if hashtag in tweethashTags:
-                    hashResult &= True
-                else:
-                    hashResult &= False
-            if hashResult:
-                if len(text) > 20:
-                    return hashResult, created_at
+            if id == tweet_id:
+                tweethashTags = re.findall(r"#(\w+)", text)
+                hashResult = True
+                for hashtag in tu.hashTags:
+                    if hashtag in tweethashTags:
+                        hashResult &= True
+                    else:
+                        hashResult &= False
+                if hashResult:
+                    if len(text) > 20:
+                        return hashResult, created_at
 
         return False, 0
-    except:
+    except Exception as e:
+        print(e)
         return False, 0
