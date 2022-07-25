@@ -361,13 +361,15 @@ class 상점(commands.Cog):
             if next_up_probability == upProbability:
                 for i in range(0, total_up):
                     next_up_probability = round(next_up_probability * (1 - ((i + 1) / (next_up_probability * 100))), 2)
+                    if next_up_probability <= 0:
+                        next_up_probability = 0.1
             else:
                 next_up_probability = round(next_up_probability * (1 - ((total_up + 1) / (next_up_probability * 100))), 2)
 
             if next_up_probability <= 0:
                 next_up_probability = 0.1
 
-            if upPrice > u_bal:
+            if next_up_price > u_bal:
                 await ctx.send('은행에 잔고가 부족합니다.')
                 return
 
