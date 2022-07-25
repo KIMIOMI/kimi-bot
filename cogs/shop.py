@@ -348,10 +348,6 @@ class 상점(commands.Cog):
             await ctx.send("없는 아이템 입니다.")
             return
 
-        if upPrice > u_bal:
-            await ctx.send('은행에 잔고가 부족합니다.')
-            return
-
         if item is not None:
             item = item['bag'][0]
             init_amount = item[1]
@@ -359,18 +355,34 @@ class 상점(commands.Cog):
             att = round(item[2]['att'] * 1.1)
             defense = round(item[2]['def'] * 1.1)
             health = round(item[2]['health'] * 1.1)
+            # upPrice = item[2]['강화비용']
+            next_up_probability = item[2]['강화확률']
+            next_up_price = round(upPrice * (1.1 ** (total_up)))
+            if next_up_probability == upProbability:
+                for i in range(0, total_up):
+                    next_up_probability = round(next_up_probability * (1 - ((i + 1) / (next_up_probability * 100))), 2)
+            else:
+                next_up_probability = round(next_up_probability * (1 - ((total_up + 1) / (next_up_probability * 100))), 2)
+
+            if next_up_probability <= 0:
+                next_up_probability = 0.1
+
+            if upPrice > u_bal:
+                await ctx.send('은행에 잔고가 부족합니다.')
+                return
 
             await db.add_bank(user.id, -upPrice)
-            if random.random() <= (upProbability / 100):
+            if random.random() <= (next_up_probability / 100):
                 await db.ecobag.update_one({"id": user.id}, {
                     "$inc": {f"bag.{index}.2.강화": 1, f"bag.{index}.2.강화 성공": 1, f"bag.{index}.2.강화 시도": 1},
                     "$set": {f"bag.{index}.2.att": att, f"bag.{index}.2.def": defense,
-                             f"bag.{index}.2.health": health}})
+                             f"bag.{index}.2.health": health, f"bag.{index}.2.강화비용": next_up_price, f"bag.{index}.2.강화확률": next_up_probability}})
 
                 await ctx.send(f'강화 성공! {user.mention}의 {name}이 {total_up + 1}강이 되었습니다.')
             else:
                 await db.ecobag.update_one({"id": user.id}, {
-                    "$inc": {f"bag.{index}.2.강화 시도": 1}})
+                    "$inc": {f"bag.{index}.2.강화 시도": 1},
+                    "$set": {f"bag.{index}.2.강화비용": next_up_price, f"bag.{index}.2.강화확률": next_up_probability}})
                 await ctx.send(f'강화 실패! {user.mention}의 {name}이 여전히 {total_up}강 입니다.')
         else:
             await ctx.send('가방에 없는 아이템 입니다.')
@@ -406,19 +418,28 @@ class 상점(commands.Cog):
             att = round(item[2]['att'] * 1.1)
             defense = round(item[2]['def'] * 1.1)
             health = round(item[2]['health'] * 1.1)
-            if init_amount >= 2:
+            amount = 1 + round((0.04 * (total_up ** 3) + 0.8 * (total_up ** 2)) * upProbability / 100)
+            next_up_probability = upProbability
+            next_up_price = round(upPrice * (1.1 ** (total_up)))
+            for i in range(0, total_up):
+                next_up_probability = round(next_up_probability * (1 - ((i + 1) / (next_up_probability * 100))), 2)
+                if next_up_probability <= 0:
+                    next_up_probability = 0.1
+                print(i, next_up_probability)
+
+            print(amount)
+
+            if init_amount >= amount:
                 await db.ecobag.update_one({"id": user.id}, {
-                    "$inc": {f"bag.{index}.1": -1, f"bag.{index}.2.강화": 1, f"bag.{index}.2.강화 성공": 1, f"bag.{index}.2.강화 시도": 1},
+                    "$inc": {f"bag.{index}.1": -amount, f"bag.{index}.2.강화": 1, f"bag.{index}.2.강화 성공": 1, f"bag.{index}.2.강화 시도": 1},
                     "$set": {f"bag.{index}.2.att": att, f"bag.{index}.2.def": defense,
-                             f"bag.{index}.2.health": health}})
+                             f"bag.{index}.2.health": health, f"bag.{index}.2.강화비용": next_up_price, f"bag.{index}.2.강화확률": next_up_probability}})
 
                 await ctx.send(f'합성 성공! {user.mention}의 {name}이 {total_up + 1}강이 되었습니다.')
             else:
-                await ctx.send(f'합성 실패! {user.mention}의 {name}이 1개 밖에 없어 합성을 할 수 없습니다.')
+                await ctx.send(f'합성 실패! {user.mention}의 {name}이 {init_amount}개 밖에 없어 합성을 할 수 없습니다.\n필요 수량 : {amount}개')
         else:
             await ctx.send('가방에 없는 아이템 입니다.')
-
-
 
 
 def setup(bot):

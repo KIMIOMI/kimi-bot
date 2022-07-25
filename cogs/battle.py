@@ -1,3 +1,4 @@
+import asyncio
 import random
 import discord
 from discord.ext import commands
@@ -59,6 +60,26 @@ def battle(opponent, user):
     return round_, o_hp, u_hp
 
 
+async def weapon_check(id, weapon, user):
+    armed_weapon_name = db.market.armed_weapon_name_split(weapon)
+    armed_item, index = await db.update_upgrade_item(id, armed_weapon_name)
+    if armed_item is None:
+        response = "착용 무기 에러 관리자에게 문의 주세요"
+        return False, False, 0, 0, response
+    armed_item = armed_item['bag'][0]
+    if '내구도' in armed_item[2]:
+        durability = armed_item[2]["내구도"]
+    else:
+        durability = 100
+
+    if durability <= 0:
+        battle_user = {"current_hp": user["current_hp"] - armed_item[2]["health"],
+                       "att": user["att"] - armed_item[2]["att"], "def": user["def"] - armed_item[2]["def"]}
+    else:
+        battle_user = user
+    return index, durability, battle_user
+
+
 async def hunting(userd: discord.Member, monster, user):
     id = userd.id
     reward = monster["reward"]
@@ -70,22 +91,7 @@ async def hunting(userd: discord.Member, monster, user):
 
     weapon = user["armed"]["weapon"]
     if weapon != '':
-        armed_weapon_name = db.market.armed_weapon_name_split(weapon)
-        armed_item, index = await db.update_upgrade_item(id, armed_weapon_name)
-        if armed_item is None:
-            response = "착용 무기 에러 관리자에게 문의 주세요"
-            return False, False, 0, 0, response
-        armed_item = armed_item['bag'][0]
-        if '내구도' in armed_item[2]:
-            durability = armed_item[2]["내구도"]
-        else:
-            durability = 100
-
-        if durability <= 0:
-            battle_user = {"current_hp": user["current_hp"] - armed_item[2]["health"],
-                           "att": user["att"] - armed_item[2]["att"], "def": user["def"] - armed_item[2]["def"]}
-        else:
-            battle_user = user
+        index, durability, battle_user = await weapon_check(id, weapon, user)
     else:
         durability = 0
         battle_user = user
@@ -103,12 +109,13 @@ async def hunting(userd: discord.Member, monster, user):
     round_, m_hp, u_hp = battle(monster, battle_user)
 
     durability -= round_
-    if durability < 0:
+    if durability <= 0:
         durability = 0
         response += f"무기 내구도가 {durability}이거나 무기를 장착하지 않아 맨몸입니다.\n"
     else:
         response += f"무기 내구도가 {durability}이 되었습니다.\n"
-    await db.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2.내구도": durability}})
+    if weapon != '':
+        await db.ecobag.update_one({"id": id}, {"$set": {f"bag.{index}.2.내구도": durability}})
 
     if round_ >= 10:
         exp = round(exp * 0.3)
@@ -223,6 +230,9 @@ class 사냥(commands.Cog):
         """
         try:
             user = ctx.author
+            if opponent.id == db.bot_id:
+                await ctx.send('나를 건들이지 마십시오!')
+                return
             user_profile = await db.update_battle_user(user.id)
             opponent_profile = await db.update_battle_user(opponent.id)
             user_bal = await db.update_user(user.id)
@@ -232,42 +242,76 @@ class 사냥(commands.Cog):
                 ctx.send("없는 유저입니다.")
                 return
 
-            round_, o_hp, u_hp = battle(opponent_profile, user_profile)
+            user_weapon = user_profile["armed"]["weapon"]
+            opponent_weapon = opponent_profile["armed"]["weapon"]
             user_wallet = user_bal["wallet"]
             opponent_wallet = opponent_bal["wallet"]
 
+            if user_weapon != '':
+                user_weapon_index, user_weapon_durability, battle_user = await weapon_check(user.id, user_weapon, user_profile)
+
+            if opponent_weapon != '':
+                opponent_weapon_index, opponent_weapon_durability, battle_opponent = await weapon_check(opponent.id, opponent_weapon, opponent_profile)
+
+            battle_user = user_profile
+            battle_opponent = opponent_profile
+
+            round_, o_hp, u_hp = battle(battle_opponent, battle_user)
+
+            if user_weapon != '':
+                user_weapon_durability -= round_
+                if user_weapon_durability < 0:
+                    user_weapon_durability = 0
+                await db.ecobag.update_one({"id": user.id}, {"$set": {f"bag.{user_weapon_index}.2.내구도": user_weapon_durability}})
+            if opponent_weapon != '':
+                opponent_weapon_durability -= round_
+                if opponent_weapon_durability < 0:
+                    opponent_weapon_durability = 0
+                await db.ecobag.update_one({"id": opponent.id},
+                                       {"$set": {f"bag.{opponent_weapon_index}.2.내구도": opponent_weapon_durability}})
+
+            message = await ctx.send(f"{user.mention}님이 {opponent.mention}님에게 전투를 신청 하였습니다.\n"
+                                     f"<{user.mention}> 공격력 : {battle_user['att']}, 방어력 : {battle_user['def']}, 체력 : {battle_user['current_hp']}\n"
+                                     f"<{opponent.mention}> 공격력 : {battle_opponent['att']}, 방어력 : {battle_opponent['def']}, 체력 : {battle_opponent['current_hp']}\n")
+            await asyncio.sleep(2)
+            await message.edit(content='전투중 ..')
+            await asyncio.sleep(3)
             if o_hp <= 0 < u_hp:
                 rob_price = round(opponent_wallet * (round_ / 100) * 5)
+                if rob_price < user_wallet * 0.1:
+                    rob_price = round(user_wallet * 0.1)
                 await db.update_user_current_hp(opponent.id, 0)
                 await db.update_user_current_hp(user.id, u_hp)
                 await db.ecomoney.update_one({"id": user.id}, {"$inc": {"wallet": +rob_price}})
                 await db.ecomoney.update_one({"id": opponent.id}, {"$inc": {"wallet": -rob_price}})
-                await ctx.send(
+                await message.edit(content=
                     f"{user.mention} 님이 승리하였습니다. {opponent.mention} 님의 지갑에 있는 ZEN 중 {rob_price} ZEN을 빼앗았습니다. "
-                    f"\n{user.mention}님의 현재 체력 : {u_hp}"
-                    f"\n{opponent.mention}님의 현재 체력 : 0")
+                    f"\n{user.mention}님의 남은 체력 : {u_hp}"
+                    f"\n{opponent.mention}님의 남은 체력 : 0")
             elif u_hp <= 0 < o_hp:
                 rob_price = round(user_wallet * (round_ / 100) * 5)
+                if rob_price < opponent_wallet * 0.1:
+                    rob_price = round(opponent_wallet * 0.1)
                 await db.update_user_current_hp(user.id, 0)
                 await db.update_user_current_hp(opponent.id, o_hp)
                 await db.ecomoney.update_one({"id": opponent.id}, {"$inc": {"wallet": +rob_price}})
                 await db.ecomoney.update_one({"id": user.id}, {"$inc": {"wallet": -rob_price}})
-                await ctx.send(
+                await message.edit(content=
                     f"{opponent.mention} 님이 승리하였습니다. {user.mention} 님의 지갑에 있는 ZEN 중 {rob_price} ZEN을 빼앗았습니다. "
-                    f"\n{opponent.mention}님의 현재 체력 : {o_hp}"
-                    f"\n{user.mention}님의 현재 체력 : 0")
+                    f"\n{opponent.mention}님의 남은 체력 : {o_hp}"
+                    f"\n{user.mention}님의 남은 체력 : 0")
             elif u_hp > 0 and o_hp > 0:
                 await db.update_user_current_hp(user.id, u_hp)
                 await db.update_user_current_hp(opponent.id, o_hp)
-                await ctx.send(f"{user.mention} VS {opponent.mention} 의 자웅을 가릴 수 없습니다. 더 강해지고 다시 도전하시지요"
-                               f"\n{user.mention}님의 현재 체력 : {u_hp}"
-                               f"\n{opponent.mention}님의 현재 체력 : {o_hp}")
+                await message.edit(content=f"{user.mention} VS {opponent.mention} 의 자웅을 가릴 수 없습니다. 더 강해지고 다시 도전하시지요"
+                               f"\n{user.mention}님의 남은 체력 : {u_hp}"
+                               f"\n{opponent.mention}님의 남은 체력 : {o_hp}")
             else:
                 await db.update_user_current_hp(user.id, 0)
                 await db.update_user_current_hp(opponent.id, 0)
-                await ctx.send(f"{user.mention} VS {opponent.mention} 둘다 체력이 바닥 이구만! 수련을 더 열심히 하고 전투를 하시지요"
-                               f"\n{user.mention}님의 현재 체력 : 0"
-                               f"\n{opponent.mention}님의 현재 체력 : 0")
+                await message.edit(content=f"{user.mention} VS {opponent.mention} 둘다 체력이 바닥 이구만! 수련을 더 열심히 하고 전투를 하시지요"
+                               f"\n{user.mention}님의 남은 체력 : 0"
+                               f"\n{opponent.mention}님의 남은 체력 : 0")
 
         except Exception as e:
             print("!전투 ", e)
