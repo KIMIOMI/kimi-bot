@@ -279,7 +279,7 @@ class 사냥(commands.Cog):
             await asyncio.sleep(3)
             if o_hp <= 0 < u_hp:
                 rob_price = round(opponent_wallet * (round_ / 100) * 5)
-                if rob_price < user_wallet * 0.1:
+                if rob_price > user_wallet * 0.1:
                     rob_price = round(user_wallet * 0.1)
                 await db.update_user_current_hp(opponent.id, 0)
                 await db.update_user_current_hp(user.id, u_hp)
@@ -291,7 +291,7 @@ class 사냥(commands.Cog):
                     f"\n{opponent.mention}님의 남은 체력 : 0")
             elif u_hp <= 0 < o_hp:
                 rob_price = round(user_wallet * (round_ / 100) * 5)
-                if rob_price < opponent_wallet * 0.1:
+                if rob_price > opponent_wallet * 0.1:
                     rob_price = round(opponent_wallet * 0.1)
                 await db.update_user_current_hp(user.id, 0)
                 await db.update_user_current_hp(opponent.id, o_hp)
