@@ -104,7 +104,7 @@ class 게임(commands.Cog):
 
     @commands.command()
     @cooldown(1, 2, BucketType.user)
-    @is_channel(db.channel_data["가위바위보"])
+    @is_channel(db.channel_data["가위바위보"], db.channel_data["도박장"])
     async def 가바보(self, ctx, userRPS: str, amount: int):
         """ 가위바위보 게임을 시작합니다. (!가바보 [가위, 바위, 보] [배팅액]) """
         try:
