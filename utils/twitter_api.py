@@ -2,17 +2,18 @@ import requests
 import json
 from urllib.parse import urlparse
 import re
+import os
 
 
 class twitter_util():
-    with open('./data.json') as f:
-        d1 = json.load(f)
+    # with open('./data.json') as f:
+    #     d1 = json.load(f)
 
     with open('./hashTags.json', encoding='UTF-8') as f:
         hashTags = json.load(f)["hashTags"]
 
     def __init__(self):
-        self.bearer_token = self.d1["BEARER_TOKEN"]
+        self.bearer_token = os.environ.get('BEARER_TOKEN')
 
     def create_headers(self):
         headers = {"Authorization": "Bearer {}".format(self.bearer_token)}

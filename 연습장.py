@@ -11,8 +11,8 @@ import numpy as np
 from utils.twitter_api import twitter_util as tu
 from urllib.parse import urlparse
 import re
-import matplotlib.pyplot as plt
 import math
+import os
 
 
 WINRATE = 2
@@ -343,7 +343,7 @@ def re_use(name):
     print(name)
     print(amount)
 
-re_use('이순신의별운검 -2')
+print(os.environ)
 #
 # a = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']
 # a = list(map(int, a))

@@ -1,3 +1,4 @@
+import os
 import motor.motor_asyncio
 import nest_asyncio
 import json
@@ -7,16 +8,16 @@ from utils.market import Market
 
 class Db():
     def __init__(self):
-        with open('./data.json') as f:
-            mongo_data = json.load(f)
+        # with open('./data.json') as f:
+        #     mongo_data = json.load(f)
         with open('./channel.json', encoding='UTF-8') as f:
             self.channel_data = json.load(f)
 
         nest_asyncio.apply()
-        mongo_url = mongo_data['mongo']
-        self.bot_id = mongo_data['bot_id']
-        self.holder_role = mongo_data['holder_role']
-        self.mention_role = mongo_data['mention_role']
+        mongo_url = os.environ.get('MONGO')
+        self.bot_id = os.environ.get('bot_id')
+        self.holder_role = os.environ.get('holder_role')
+        self.mention_role = os.environ.get('mention_role')
         cluster = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
         self.market = Market()
         self.ecomoney = cluster["aoz"]["money"]

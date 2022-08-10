@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from os import listdir, system
-
+import os
 import aiohttp
 import discord
 import json
@@ -43,17 +43,17 @@ class Echo(commands.Bot):
         )
         print(f"[ Log ] GateWay WebSocket Latency: {self.latency*1000:.1f} ms")
 
-with open('./data.json') as f:
-    d1 = json.load(f)
-with open('./market.json', encoding='UTF-8') as f:
-    d2 = json.load(f)
-
-
-def bot_info():
-    return d1
-def market_info():
-    return d2
-TOKEN = d1['token']
+# with open('./data.json') as f:
+#     d1 = json.load(f)
+# with open('./market.json', encoding='UTF-8') as f:
+#     d2 = json.load(f)
+#
+#
+# def bot_info():
+#     return d1
+# def market_info():
+#     return d2
+TOKEN = os.environ.get('BOT_TOKEN')
 bot = Echo()
 
 @bot.command(hidden=True)
